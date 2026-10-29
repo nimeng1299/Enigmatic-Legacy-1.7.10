@@ -111,6 +111,7 @@ import com.aizistral.enigmaticlegacy.items.TheInfinitum;
 import com.aizistral.enigmaticlegacy.items.TheTwist;
 import com.aizistral.enigmaticlegacy.items.VoidPearl;
 import com.aizistral.enigmaticlegacy.items.generic.ItemSpellstoneCurio;
+import com.aizistral.enigmaticlegacy.mixin.MixinEntityPlayer;
 import com.aizistral.enigmaticlegacy.objects.CooldownMap;
 import com.aizistral.enigmaticlegacy.objects.DimensionalPosition;
 import com.aizistral.enigmaticlegacy.objects.Perhaps;
@@ -577,8 +578,12 @@ public class EnigmaticEventHandler {
                         new ChatComponentText(
                             EnumChatFormatting.RED
                                 + StatCollector.translateToLocal("message.enigmaticlegacy.cursed_sleep")));
+                } else if (player.getSleepTimer() > 90) {
+                    // Mirror upstream: a cursed sleeper never reaches the fully-asleep threshold,
+                    // so the server neither skips the night nor force-wakes anyone; the player
+                    // simply lies in bed while time passes normally.
+                    ((MixinEntityPlayer) player).setSleepTimer(90);
                 }
-                // 1.7.10: sleep counter is private, cannot be clamped at 90.
             }
         }
 

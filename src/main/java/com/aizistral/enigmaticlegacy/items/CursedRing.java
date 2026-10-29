@@ -12,11 +12,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.EntityEnderman;
 import net.minecraft.entity.monster.EntityIronGolem;
 import net.minecraft.entity.monster.EntityPigZombie;
 import net.minecraft.entity.passive.EntityTameable;
+import net.minecraft.entity.passive.EntityWolf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.EnumRarity;
@@ -40,6 +42,7 @@ import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.items.generic.ItemBaseCurio;
+import com.aizistral.enigmaticlegacy.mixin.MixinEntityCreature;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
 import com.aizistral.omniconfig.Configuration;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
@@ -383,13 +386,14 @@ public class CursedRing extends ItemBaseCurio {
             if (random.nextDouble() <= (0.002 * endermenRandomportFrequency.getValue())) {
                 if (enderman.getRNG()
                     .nextInt(2) == 0 && player.canEntityBeSeen(enderman)) {
-                    enderman.setAttackTarget(player);
+                    ((MixinEntityCreature) enderman).setLegacyAttackTarget(player);
                 }
             }
         }
 
         for (EntityLivingBase checkedEntity : genericMobs) {
-            double angerDistance = neutralXRayRange.getValue();
+            double visibility = player.isInvisible() ? 0.1D : 1.0D;
+            double angerDistance = Math.max(neutralAngerRange.getValue() * visibility, neutralXRayRange.getValue());
 
             if (checkedEntity.getDistanceSqToEntity(player) > angerDistance * angerDistance) {
                 continue;
@@ -398,38 +402,84 @@ public class CursedRing extends ItemBaseCurio {
             if (checkedEntity instanceof EntityPigZombie
                 && !SuperpositionHandler.hasCurio(player, EnigmaticItems.AVARICE_SCROLL)) {
                 EntityPigZombie piglin = (EntityPigZombie) checkedEntity;
+                Entity legacyTarget = ((MixinEntityCreature) piglin).getLegacyAttackTarget();
 
-                if (piglin.getAttackTarget() == null || !piglin.getAttackTarget()
-                    .isEntityAlive()) {
-                    if (player.canEntityBeSeen(checkedEntity)
-                        || player.getDistanceToEntity(checkedEntity) <= neutralXRayRange.getValue()) {
-                        piglin.setAttackTarget(player);
-                        piglin.setRevengeTarget(player);
+                // 1.7.10 pigmen run no task AI, so setAttackTarget would be ignored
+                if (legacyTarget == null || !legacyTarget.isEntityAlive()) {
+                    if (player.canEntityBeSeen(piglin)
+                        || player.getDistanceToEntity(piglin) <= neutralXRayRange.getValue()) {
+                        ((MixinEntityCreature) piglin).setLegacyAttackTarget(player);
                     } else {
                         continue;
                     }
                 }
 
-            } else if (checkedEntity instanceof EntityTameable) {
-                EntityTameable tamable = (EntityTameable) checkedEntity;
+            } else if (checkedEntity instanceof EntityLiving
+                && (checkedEntity instanceof EntityIronGolem || checkedEntity instanceof EntityWolf
+                    || checkedEntity instanceof EntityEnderman)) {
+                        // 1.7.10 lacks the NeutralMob interface; these are its vanilla implementors
+                        // (zombie pigmen are handled by the dedicated branch above)
+                        EntityLiving neutral = (EntityLiving) checkedEntity;
 
-                if (tamable.isTamed()) {
-                    continue;
-                }
-            } else if (checkedEntity instanceof EntityIronGolem) {
-                if (((EntityIronGolem) checkedEntity).isPlayerCreated()) {
-                    continue;
-                }
-            } else {
-                // Unregistered entities (players among them) have no EntityList name; ResourceLocation rejects null
-                String entityName = EntityList.getEntityString(checkedEntity);
+                        if (isOnNeutralAngerBlacklist(neutral)) {
+                            continue;
+                        }
 
-                if (entityName != null && neutralAngerBlacklist.contains(new ResourceLocation(entityName))) {
-                    continue;
-                }
+                        if (neutral instanceof EntityTameable && ((EntityTameable) neutral).isTamed()) {
+                            continue;
+                        }
+
+                        if (SuperpositionHandler.hasItem(player, EnigmaticItems.ANIMAL_GUIDEBOOK)
+                            && EnigmaticItems.ANIMAL_GUIDEBOOK.isTamableAnimal(neutral)) {
+                            continue;
+                        }
+
+                        if (neutral instanceof EntityIronGolem && ((EntityIronGolem) neutral).isPlayerCreated()) {
+                            continue;
+                        }
+
+                        if (neutral.getAttackTarget() == null || !neutral.getAttackTarget()
+                            .isEntityAlive()) {
+                            if (player.canEntityBeSeen(neutral)
+                                || player.getDistanceToEntity(neutral) <= neutralXRayRange.getValue()) {
+                                // endermen run no task AI either; they only read the legacy target
+                                if (neutral instanceof EntityEnderman) {
+                                    ((MixinEntityCreature) neutral).setLegacyAttackTarget(player);
+                                } else {
+                                    neutral.setAttackTarget(player);
+                                }
+                            } else {
+                                continue;
+                            }
+                        }
+                    }
+        }
+
+    }
+
+    private static boolean isOnNeutralAngerBlacklist(EntityLivingBase entity) {
+        String entityName = EntityList.getEntityString(entity);
+
+        if (entityName == null) {
+            return false;
+        }
+
+        // 1.7.10 entity names are camel-cased ("IronGolem") while the config format follows
+        // modern registry ids ("minecraft:iron_golem"); also compare with underscores stripped
+        String flatName = entityName.toLowerCase()
+            .replace("_", "");
+
+        for (ResourceLocation blacklisted : neutralAngerBlacklist) {
+            if (blacklisted.toString()
+                .equalsIgnoreCase(entityName)
+                || blacklisted.getResourcePath()
+                    .replace("_", "")
+                    .equalsIgnoreCase(flatName)) {
+                return true;
             }
         }
 
+        return false;
     }
 
     @Override

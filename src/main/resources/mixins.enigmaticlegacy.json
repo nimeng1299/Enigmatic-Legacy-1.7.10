@@ -8,6 +8,8 @@
     "mixins": [
         "MixinBrewingStandIngredientSlot",
         "MixinBrewingStandPotionSlot",
+        "MixinEntityCreature",
+        "MixinEntityPlayer",
         "MixinTileEntityBrewingStand"
     ],
     "client": [],
