@@ -100,7 +100,11 @@ public abstract class ItemBaseArmor extends ItemArmor implements ICreativeTabMem
             player == null ? null : player.worldObj,
             lore,
             advanced ? TooltipFlag.ADVANCED : TooltipFlag.NORMAL);
-        list.addAll(lore);
+
+        // Vanilla expects plain Strings in this list; Components would crash NEI and creative search
+        for (Component component : lore) {
+            list.add(component.getFormattedText());
+        }
     }
 
     @SideOnly(Side.CLIENT)
