@@ -420,10 +420,14 @@ public class CursedRing extends ItemBaseCurio {
                 if (((EntityIronGolem) checkedEntity).isPlayerCreated()) {
                     continue;
                 }
-            } else
-                if (neutralAngerBlacklist.contains(new ResourceLocation(EntityList.getEntityString(checkedEntity)))) {
+            } else {
+                // Unregistered entities (players among them) have no EntityList name; ResourceLocation rejects null
+                String entityName = EntityList.getEntityString(checkedEntity);
+
+                if (entityName != null && neutralAngerBlacklist.contains(new ResourceLocation(entityName))) {
                     continue;
                 }
+            }
         }
 
     }
