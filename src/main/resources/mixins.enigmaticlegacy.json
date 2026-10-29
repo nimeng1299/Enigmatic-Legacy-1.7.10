@@ -1,0 +1,15 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "com.aizistral.enigmaticlegacy.mixin",
+    "compatibilityLevel": "JAVA_8",
+    "refmap": "mixins.enigmaticlegacy.refmap.json",
+    "target": "@env(DEFAULT)",
+    "mixins": [
+        "MixinBrewingStandIngredientSlot",
+        "MixinBrewingStandPotionSlot",
+        "MixinTileEntityBrewingStand"
+    ],
+    "client": [],
+    "server": []
+}

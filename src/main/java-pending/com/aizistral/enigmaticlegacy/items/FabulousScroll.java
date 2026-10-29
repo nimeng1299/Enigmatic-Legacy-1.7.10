@@ -1,0 +1,94 @@
+package com.aizistral.enigmaticlegacy.items;
+
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
+import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
+import com.aizistral.enigmaticlegacy.helpers.ExperienceHelper;
+import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
+import com.aizistral.enigmaticlegacy.items.generic.ItemBaseCurio;
+
+import com.aizistral.enigmaticlegacy.compat.Screen;
+import com.aizistral.enigmaticlegacy.compat.text.Component;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.potion.PotionEffect;
+import com.aizistral.enigmaticlegacy.compat.MobEffects;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.EnumRarity;
+import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
+import net.minecraft.world.World;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
+
+public class FabulousScroll extends HeavenScroll {
+
+	public FabulousScroll() {
+		super(ItemBaseCurio.getDefaultProperties().rarity(EnumRarity.EPIC));
+	}
+
+	@Override
+	@SideOnly(Side.CLIENT)
+	public void appendHoverText(ItemStack stack, @Nullable World worldIn, List<Component> list, TooltipFlag flagIn) {
+		ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.void");
+
+		if (Screen.hasShiftDown()) {
+			ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.fabulousScroll1");
+			ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.fabulousScroll2");
+			ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.fabulousScroll3");
+			ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.fabulousScroll4");
+			ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.void");
+			ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.fabulousScroll5");
+		} else {
+			ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.holdShift");
+		}
+	}
+
+	@Override
+	public void curioTick(SlotContext context, ItemStack stack) {
+		if (context.entity().worldObj.isClientSide)
+			return;
+
+		if (context.entity() instanceof EntityPlayer player) {
+			//don't check in range every tick as it is expensive. Particularly for multiple people.
+			//instead, check once per second, based on the player's tick count
+			if (player.ticksExisted % 20 != 0)
+				return;
+
+			boolean inRange = SuperpositionHandler.isInBeaconRange(player);
+
+			final int fabConsumptionProbMod = 8;
+			//only check xp drain if flying.
+			//because we're only checking once per 20 ticks, increase the probability by 20
+			if (this.shouldCheckXpDrain(player) && !inRange && Math.random() <= ((this.baseXpConsumptionProbability * fabConsumptionProbMod) * 20)) {
+				//cost modifier hooked up to drain xp cost
+				ExperienceHelper.drainPlayerXP(player, (int) (xpCostModifier.getValue()));
+			}
+
+			this.handleFlight(player, inRange);
+		}
+	}
+
+	@Override
+	protected boolean canFly(EntityPlayer player, boolean inRangeCheckedAndSucceeded)
+	{
+		return inRangeCheckedAndSucceeded || ExperienceHelper.getPlayerXP(player) > 0 || (SuperpositionHandler.isInBeaconRange(player));
+	}
+
+	@Override
+	public void onUnequip(SlotContext context, ItemStack newStack, ItemStack stack) {
+		if (context.entity() instanceof EntityPlayer player) {
+			if (!player.isCreative()) {
+				player.getAbilities().mayfly = false;
+				player.getAbilities().flying = false;
+				player.onUpdateAbilities();
+			}
+
+			this.flyMap.put(player, 0);
+		}
+	}
+
+}

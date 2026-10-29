@@ -1,0 +1,6 @@
+// Diagnostic-only initializer: raises javac max errors so a full error surface can be captured.
+allprojects {
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs += ['-Xmaxerrs', '30000']
+    }
+}
