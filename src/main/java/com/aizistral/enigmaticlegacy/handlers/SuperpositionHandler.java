@@ -263,6 +263,23 @@ public class SuperpositionHandler {
         return experience + bonus;
     }
 
+    public static boolean isEnchantingBoosted(World world, int x, int y, int z) {
+        List<EntityPlayer> players = world.getEntitiesWithinAABB(
+            EntityPlayer.class,
+            AxisAlignedBB.getBoundingBox(x - 16, y - 16, z - 16, x + 16, y + 16, z + 16));
+
+        for (EntityPlayer player : players) {
+            if (SuperpositionHandler.isTheCursedOne(player)) return true;
+        }
+
+        return false;
+    }
+
+    public static int applyEnchantingBonus(World world, int x, int y, int z, int level) {
+        if (level <= 0 || !SuperpositionHandler.isEnchantingBoosted(world, x, y, z)) return level;
+        return level + CursedRing.enchantingBonus.getValue();
+    }
+
     public static void destroyCurio(EntityLivingBase entity, Item curio) {
         net.minecraft.inventory.IInventory baubles = SuperpositionHandler.getBaubles(entity);
 

@@ -8,8 +8,10 @@
     "mixins": [
         "MixinBrewingStandIngredientSlot",
         "MixinBrewingStandPotionSlot",
+        "MixinContainerEnchantment",
         "MixinEnchantmentHelper",
         "MixinEntityCreature",
+        "MixinEtFuturumContainerEnchantment",
         "MixinEntityLivingBase",
         "MixinEntityPlayer",
         "MixinTileEntityBrewingStand"

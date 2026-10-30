@@ -33,11 +33,11 @@
 - 佩戴 Cursed Ring 时按 `CursedRing.experienceBonus` 增加经验 — **已实现**（同上；默认配置为在原版经验之上再 +400%，即 5 倍）。
 - 佩戴 Enigmatic Amulet 的玩家死亡时取消经验掉落（非 `keepInventory`）— **未实现**。1.7.10 玩家掉落处理结束时 `POSTMORTAL_POSESSIONS` 已被清空，而经验球在死亡 20 tick 后才生成，需要在死亡时额外记录玩家是否持有护符。
 
-### 3. 诅咒玩家附魔等级加成 — 未实现
+### 3. 诅咒玩家附魔等级加成 — 已实现
 
 1.20 `onEnchantmentLevelSet`：附魔台 16 格半径内只要存在任意诅咒玩家，附魔等级增加 `CursedRing.enchantingBonus`（配置值，只加成一次，不随人数叠加）。
 
-1.7.10 无此 Forge 事件，需要 Mixin `ContainerEnchantment` / `SlotEnchantment` 或改 `EnchantmentHelper` 的等级计算。
+现状：`MixinContainerEnchantment` 重定向 `ContainerEnchantment.onCraftMatrixChanged` 中的 `EnchantmentHelper.calcItemStackEnchantability`，对每个非零附魔等级追加配置值。加成发生在原版等级计算之后，因此满书架时的 30 级上限也能继续提升（默认 +10，即最高约 40 级）。Et Futurum 在 `enableNewEnchantingTable=true` 且 `tileReplacementMode=0` 时会用自己的方块和 `ganymedes01.etfuturum.inventory.ContainerEnchantment` 替换附魔台，另由 `MixinEtFuturumContainerEnchantment`（`@Pseudo` 可选兼容）覆盖同一逻辑。
 
 ### 4. 末影珍珠伤害免疫 — 未实现（改动很小）
 
