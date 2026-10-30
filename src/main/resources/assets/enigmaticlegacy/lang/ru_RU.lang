@@ -319,6 +319,7 @@ advancement.enigmaticlegacy:allSpellstones.desc=Соберите каждый у
 advancement.enigmaticlegacy:theCube=Этот куб излечил мою смертность
 advancement.enigmaticlegacy:theCube.desc=Придайте всем камням стихий форму, одинаково мощную и неестественную, создав Неевклидов куб
 tooltip.enigmaticlegacy.holdShift=§5Удерживайте §6Shift§5 для деталей.
+tooltip.enigmaticlegacy.baubleSlot=§5Можно надеть в: %1$s
 tooltip.enigmaticlegacy.enigmaticItem1=§dАктивная способность:
 tooltip.enigmaticlegacy.enigmaticItem2=§6- Низвергает разрушительный ливень из черепов Иссушителя.
 tooltip.enigmaticlegacy.enigmaticItemCooldown=§dВремя восстановления: §6%1$s§6 секунд

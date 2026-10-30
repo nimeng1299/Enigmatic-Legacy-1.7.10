@@ -19,6 +19,7 @@ import com.aizistral.omniconfig.Configuration;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
 import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 
+import baubles.api.BaubleType;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -67,6 +68,11 @@ public class EnderRing extends ItemBaseCurio {
         super(
             ItemBaseCurio.getDefaultProperties()
                 .rarity(EnumRarity.uncommon));
+    }
+
+    @Override
+    public BaubleType getBaubleType(ItemStack stack) {
+        return BaubleType.RING;
     }
 
     @SideOnly(Side.CLIENT)

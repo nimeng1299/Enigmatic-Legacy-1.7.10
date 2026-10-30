@@ -21,6 +21,7 @@ import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.items.generic.ItemBaseCurio;
 
+import baubles.api.BaubleType;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -28,6 +29,11 @@ public class DesolationRing extends ItemBaseCurio implements IEldritch {
 
     public DesolationRing() {
         super(getDefaultProperties().rarity(EnumRarity.epic));
+    }
+
+    @Override
+    public BaubleType getBaubleType(ItemStack stack) {
+        return BaubleType.RING;
     }
 
     @SideOnly(Side.CLIENT)

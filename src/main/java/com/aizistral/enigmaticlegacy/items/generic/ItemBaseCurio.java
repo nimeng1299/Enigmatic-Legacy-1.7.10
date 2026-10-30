@@ -1,12 +1,15 @@
 package com.aizistral.enigmaticlegacy.items.generic;
 
+import java.util.List;
 import java.util.Map;
 
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.StatCollector;
 
 import com.aizistral.enigmaticlegacy.api.items.IBindable;
 import com.aizistral.enigmaticlegacy.compat.Enchantments;
@@ -18,6 +21,9 @@ import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 
 import baubles.api.BaubleType;
 import baubles.api.IBauble;
+import baubles.api.expanded.BaubleExpandedSlots;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 public abstract class ItemBaseCurio extends ItemBase implements ICurioItem, IBauble, IBindable, Vanishable {
 
@@ -27,6 +33,18 @@ public abstract class ItemBaseCurio extends ItemBase implements ICurioItem, IBau
 
     public ItemBaseCurio(Properties props) {
         super(props);
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean advanced) {
+        super.addInformation(stack, player, list, advanced);
+
+        String slotType = BaubleExpandedSlots.getTypeFromBaubleType(this.getBaubleType(stack));
+        list.add(
+            StatCollector.translateToLocalFormatted(
+                "tooltip.enigmaticlegacy.baubleSlot",
+                StatCollector.translateToLocal("slot." + slotType)));
     }
 
     // ------------------------------------------------------------------

@@ -333,6 +333,7 @@ advancement.enigmaticlegacy:theCube.desc=Force all spellstones into a shape equa
 advancement.enigmaticlegacy:fabulousScroll=Touch the Skies
 advancement.enigmaticlegacy:fabulousScroll.desc=Obtain Grace of the Creator
 tooltip.enigmaticlegacy.holdShift=§5Hold §6Shift§5 to see details.
+tooltip.enigmaticlegacy.baubleSlot=§5Equippable in: %1$s
 tooltip.enigmaticlegacy.enigmaticItem1=§dActive ability:
 tooltip.enigmaticlegacy.enigmaticItem2=§6- Rains down devastating Wither Skulls.
 tooltip.enigmaticlegacy.enigmaticItemCooldown=§dСooldown: §6%1$s§6 seconds

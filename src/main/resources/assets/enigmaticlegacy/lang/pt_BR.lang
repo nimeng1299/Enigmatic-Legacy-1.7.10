@@ -326,6 +326,7 @@ advancement.enigmaticlegacy:theCube.desc=Force todas as pedras de magia em uma f
 advancement.enigmaticlegacy:fabulousScroll=Toque os Céus
 advancement.enigmaticlegacy:fabulousScroll.desc=Obtenha Graça do Criador
 tooltip.enigmaticlegacy.holdShift=§5Segure §6Shift§5 para ver detalhes.
+tooltip.enigmaticlegacy.baubleSlot=§5Equipável em: %1$s
 tooltip.enigmaticlegacy.enigmaticItem1=§dHabilidade ativa:
 tooltip.enigmaticlegacy.enigmaticItem2=§6- Chove devastadores Crânios do Wither.
 tooltip.enigmaticlegacy.enigmaticItemCooldown=§dTempo de recarga: §6%1$s§6 segundos

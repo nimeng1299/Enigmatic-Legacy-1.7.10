@@ -12,10 +12,17 @@ import com.aizistral.enigmaticlegacy.items.generic.ItemBaseCurio;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import baubles.api.BaubleType;
+
 public class IronRing extends ItemBaseCurio {
 
     public IronRing() {
         super(ItemBaseCurio.getDefaultProperties());
+    }
+
+    @Override
+    public BaubleType getBaubleType(ItemStack stack) {
+        return BaubleType.RING;
     }
 
     @Override

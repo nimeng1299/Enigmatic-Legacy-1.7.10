@@ -50,6 +50,7 @@ import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import baubles.api.BaubleType;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -212,6 +213,11 @@ public class CursedRing extends ItemBaseCurio {
         super(
             ItemBaseCurio.getDefaultProperties()
                 .rarity(EnumRarity.epic));
+    }
+
+    @Override
+    public BaubleType getBaubleType(ItemStack stack) {
+        return BaubleType.RING;
     }
 
     @SideOnly(Side.CLIENT)

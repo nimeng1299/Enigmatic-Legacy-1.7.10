@@ -328,6 +328,7 @@ advancement.enigmaticlegacy:theCube.desc=모든 주문석을 동일하게 강력
 advancement.enigmaticlegacy:fabulousScroll=하늘을 만지다
 advancement.enigmaticlegacy:fabulousScroll.desc=창조주의 은혜를 획득하세요
 tooltip.enigmaticlegacy.holdShift=§6Shift§5를 눌러 자세한 정보를 확인하세요.
+tooltip.enigmaticlegacy.baubleSlot=§5장착 가능: %1$s
 tooltip.enigmaticlegacy.enigmaticItem1=§d액티브 능력:
 tooltip.enigmaticlegacy.enigmaticItem2=§6- 폭발하는 위더 해골을 발사합니다.
 tooltip.enigmaticlegacy.enigmaticItemCooldown=§d재사용 대기시간: §6%1$s§6초
