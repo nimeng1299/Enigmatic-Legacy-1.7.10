@@ -10,6 +10,7 @@ import java.util.WeakHashMap;
 
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureAttribute;
@@ -143,6 +144,7 @@ import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.common.registry.GameRegistry;
 
 /**
  * Generic event handler of the whole mod. This is the 1.7.10 server/gameplay
@@ -1930,15 +1932,18 @@ public class EnigmaticEventHandler {
 
         if (!CursedRing.enableSpecialDrops.getValue()) return;
 
-        if (killed.getClass() == EntitySkeleton.class) {
+        if (killed instanceof EntitySkeleton) {
             if (((EntitySkeleton) killed).getSkeletonType() == 1) {
                 this.addDrop(event, this.getRandomSizeStack(Items.blaze_powder, 0, 3));
                 this.addDropWithChance(event, new ItemStack(Items.ghast_tear, 1), 20);
-                this.addDropWithChance(event, new ItemStack(Items.iron_ingot, 1), 7);
+                this.addDropWithChance(
+                    event,
+                    new ItemStack(this.getCompatItem("etfuturum", "netherite_scrap", Items.iron_ingot), 1),
+                    7);
             } else {
                 this.addDrop(event, this.getRandomSizeStack(Items.arrow, 3, 15));
             }
-        } else if (killed.getClass() == EntityZombie.class) {
+        } else if (this.isZombieOrHusk(killed)) {
             this.addDropWithChance(event, this.getRandomSizeStack(Items.slime_ball, 1, 3), 25);
         } else if (killed.getClass() == EntitySpider.class || killed.getClass() == EntityCaveSpider.class) {
             this.addDrop(event, this.getRandomSizeStack(Items.string, 2, 12));
@@ -1951,19 +1956,26 @@ public class EnigmaticEventHandler {
             this.addDropWithChance(event, this.getRandomSizeStack(Items.glowstone_dust, 1, 7), 30);
         } else if (killed.getClass() == EntityWitch.class) {
             this.addDropWithChance(event, new ItemStack(Items.ghast_tear, 1), 30);
-            this.addDropWithChance(event, this.getRandomSizeStack(Items.leather, 1, 3), 50);
+            this.addDropWithChance(
+                event,
+                this.getRandomSizeStack(this.getCompatItem("etfuturum", "phantom_membrane", Items.leather), 1, 3),
+                50);
         } else if (killed.getClass() == EntityVillager.class) {
             this.addDrop(event, this.getRandomSizeStack(Items.emerald, 2, 6));
         } else if (killed.getClass() == EntityCreeper.class) {
             this.addDrop(event, this.getRandomSizeStack(Items.gunpowder, 4, 12));
         } else if (killed.getClass() == EntityGhast.class) {
-            this.addDrop(event, this.getRandomSizeStack(Items.leather, 1, 4));
+            this.addDrop(
+                event,
+                this.getRandomSizeStack(this.getCompatItem("etfuturum", "phantom_membrane", Items.leather), 1, 4));
         } else if (killed.getClass() == EntityMagmaCube.class) {
             this.addDropWithChance(event, new ItemStack(Items.blaze_powder, 1), 50);
         } else if (killed.getClass() == EntityChicken.class) {
             this.addDropWithChance(event, new ItemStack(Items.egg, 1), 50);
         } else if (killed instanceof EntityWither) {
             this.addDrop(event, this.getRandomSizeStack(EnigmaticItems.EVIL_ESSENCE, 1, 4));
+        } else if (this.isCompatEntity(killed, "shulker")) {
+            this.addDropWithChance(event, new ItemStack(EnigmaticItems.ASTRAL_DUST, 1), 20);
         } else if (killed.getClass() == EntitySilverfish.class) {
             // NO-OP
         }
@@ -2048,6 +2060,26 @@ public class EnigmaticEventHandler {
 
     private boolean isWaterCreature(EntityLivingBase living) {
         return living.isInWater() || living.getClass() == net.minecraft.entity.passive.EntitySquid.class;
+    }
+
+    private static boolean isZombieOrHusk(EntityLivingBase entity) {
+        return (entity.getClass() == EntityZombie.class && !((EntityZombie) entity).isVillager())
+            || isCompatEntity(entity, "husk");
+    }
+
+    private static boolean isCompatEntity(EntityLivingBase entity, String name) {
+        String id = EntityList.getEntityString(entity);
+
+        if (id == null) return false;
+
+        String lower = id.toLowerCase();
+        String target = name.toLowerCase();
+        return lower.equals(target) || lower.endsWith("." + target) || lower.endsWith(":" + target);
+    }
+
+    private static Item getCompatItem(String modid, String name, Item fallback) {
+        Item item = GameRegistry.findItem(modid, name);
+        return item != null ? item : fallback;
     }
 
     public void addDrop(LivingDropsEvent event, ItemStack drop) {
