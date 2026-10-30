@@ -2,7 +2,7 @@
 
 > 对照基线：`E:\code\Enigmatic-Legacy-1.20.x`（1.20.1 / Forge）
 > 当前状态：`./gradlew build` 通过；服务端冒烟测试与客户端渲染截图验证通过
-> 最后更新：2026-10-29
+> 最后更新：2026-10-30
 
 图例：**未实现** = 1.7.10 可做但尚未做；**部分实现** = 有简化版或仅保留数据结构；**平台不适用** = 1.7.10 无对应机制，不建议移植。
 
@@ -25,17 +25,13 @@
 
 建议实现：监听 Forge 的 `PlayerOpenContainerEvent`，在服务端识别 `ContainerChest` / 末影箱，按玩家持久 NBT 一次性注入物品；末地城宝箱可用维度 + 距离末地岛中心的范围判定近似。
 
-### 2. 经验掉落修正 — 未实现
+### 2. 经验掉落修正 — 部分实现
 
-1.20 `EnigmaticEventHandler.onExperienceDrop` 的三段逻辑全部缺失：
+1.20 `EnigmaticEventHandler.onExperienceDrop` 的三段逻辑：
 
-- 佩戴 Enigmatic Amulet 的玩家死亡时取消经验掉落（非 `keepInventory`）。
-- Monster Charm 击杀怪物时按 `MonsterCharm.bonusXPModifier` 增加经验。
-- 佩戴 Cursed Ring 时按 `CursedRing.experienceBonus` 增加经验。
-
-现状：`CursedRing.experienceBonus`（Omniconfig 参数）与 `MonsterCharm.bonusXPModifier`（固定值 2.0）都存在但从未被读取，经验加成实际不生效。
-
-建议实现：1.7.10 没有 `LivingExperienceDropEvent`，需要 Mixin `EntityLivingBase.dropExperience` / `EntityPlayer.onDeath`，或在 `LivingDeathEvent` 中手动生成 `EntityXPOrb` 并配合 Mixin 取消原版掉落。
+- Monster Charm 击杀怪物时按 `MonsterCharm.bonusXPModifier` 增加经验 — **已实现**（`MixinEntityLivingBase` 重定向 `onDeathUpdate` 中的 `getExperiencePoints` 调用，受 `DoubleXP` 开关控制）。
+- 佩戴 Cursed Ring 时按 `CursedRing.experienceBonus` 增加经验 — **已实现**（同上；默认配置为在原版经验之上再 +400%，即 5 倍）。
+- 佩戴 Enigmatic Amulet 的玩家死亡时取消经验掉落（非 `keepInventory`）— **未实现**。1.7.10 玩家掉落处理结束时 `POSTMORTAL_POSESSIONS` 已被清空，而经验球在死亡 20 tick 后才生成，需要在死亡时额外记录玩家是否持有护符。
 
 ### 3. 诅咒玩家附魔等级加成 — 未实现
 

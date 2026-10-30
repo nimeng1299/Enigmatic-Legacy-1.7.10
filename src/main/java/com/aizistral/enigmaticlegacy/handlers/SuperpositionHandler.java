@@ -27,6 +27,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.monster.IMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
@@ -60,6 +61,7 @@ import com.aizistral.enigmaticlegacy.compat.SoundEvent;
 import com.aizistral.enigmaticlegacy.compat.SoundEvents;
 import com.aizistral.enigmaticlegacy.compat.Tuple;
 import com.aizistral.enigmaticlegacy.compat.curios.ICurioItem;
+import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
 import com.aizistral.enigmaticlegacy.compat.network.PacketDistributor;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
@@ -67,6 +69,7 @@ import com.aizistral.enigmaticlegacy.items.CursedRing;
 import com.aizistral.enigmaticlegacy.items.EldritchPan;
 import com.aizistral.enigmaticlegacy.items.GolemHeart;
 import com.aizistral.enigmaticlegacy.items.InfernalShield;
+import com.aizistral.enigmaticlegacy.items.MonsterCharm;
 import com.aizistral.enigmaticlegacy.items.TheAcknowledgment;
 import com.aizistral.enigmaticlegacy.items.generic.ItemSpellstoneCurio;
 import com.aizistral.enigmaticlegacy.objects.DimensionalPosition;
@@ -200,6 +203,64 @@ public class SuperpositionHandler {
         }
 
         return null;
+    }
+
+    /**
+     * Aggregates the Curios-style loot hooks of all equipped baubles, replicating
+     * the global dispatch Curios performs on modern versions.
+     */
+    public static int getCurioFortuneBonus(EntityLivingBase entity) {
+        net.minecraft.inventory.IInventory baubles = SuperpositionHandler.getBaubles(entity);
+
+        if (baubles == null) return 0;
+
+        int bonus = 0;
+
+        for (int i = 0; i < baubles.getSizeInventory(); i++) {
+            ItemStack stack = baubles.getStackInSlot(i);
+
+            if (stack != null && stack.getItem() instanceof ICurioItem curio) {
+                bonus += curio.getFortuneLevel(new SlotContext(entity, "curio", i), null, stack);
+            }
+        }
+
+        return bonus;
+    }
+
+    public static int getCurioLootingBonus(EntityLivingBase entity, DamageSource source, EntityLivingBase target) {
+        net.minecraft.inventory.IInventory baubles = SuperpositionHandler.getBaubles(entity);
+
+        if (baubles == null) return 0;
+
+        int bonus = 0;
+
+        for (int i = 0; i < baubles.getSizeInventory(); i++) {
+            ItemStack stack = baubles.getStackInSlot(i);
+
+            if (stack != null && stack.getItem() instanceof ICurioItem curio) {
+                bonus += curio.getLootingLevel(new SlotContext(entity, "curio", i), source, target, 0, stack);
+            }
+        }
+
+        return bonus;
+    }
+
+    public static int applyExperienceBonuses(EntityLivingBase killed, EntityPlayer killer, int experience) {
+        if (killer == null || experience <= 0) return experience;
+
+        int bonus = 0;
+
+        if (killed instanceof IMob && MonsterCharm.doubleXPEnabled.getValue()
+            && SuperpositionHandler.hasCurio(killer, EnigmaticItems.MONSTER_CHARM)) {
+            bonus += experience * (EnigmaticItems.MONSTER_CHARM.bonusXPModifier - 1.0F);
+        }
+
+        if (SuperpositionHandler.hasCurio(killer, EnigmaticItems.CURSED_RING)) {
+            bonus += experience * CursedRing.experienceBonus.getValue()
+                .asMultiplier();
+        }
+
+        return experience + bonus;
     }
 
     public static void destroyCurio(EntityLivingBase entity, Item curio) {

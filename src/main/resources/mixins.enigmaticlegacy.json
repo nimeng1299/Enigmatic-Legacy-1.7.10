@@ -8,7 +8,9 @@
     "mixins": [
         "MixinBrewingStandIngredientSlot",
         "MixinBrewingStandPotionSlot",
+        "MixinEnchantmentHelper",
         "MixinEntityCreature",
+        "MixinEntityLivingBase",
         "MixinEntityPlayer",
         "MixinTileEntityBrewingStand"
     ],
