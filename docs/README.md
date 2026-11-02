@@ -11,3 +11,13 @@
 This mod is designed to bring new magical-themed content to the game, mainly of utilitary nature. New trinkets and powerful relics are restlessly waiting to contribute to your creational and/or destructional purposes, whatever moral is standing behind them, if any at all...
 
 Whatever fate your advent will bring upon this forgotten land.
+
+## 1.7.10 的一些改动
+
+# 七咒之戒
+
+* 击杀砷铅铁傀儡也有 20% 概率掉落星尘
+
+# 战利品
+
+* 现在暮色黑暗高塔会概率出以太矿石

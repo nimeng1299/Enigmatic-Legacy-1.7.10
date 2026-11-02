@@ -38,6 +38,7 @@ dependencies {
     implementation("com.github.GTNewHorizons:Baubles-Expanded:2.2.27-GTNH")
     implementation("ganymedes01.etfuturum:Et-Futurum-Requiem:2.6.60-GTNH")
     implementation("com.github.GTNewHorizons:VillageNames:4.5.21-GTNH")
+    implementation("com.github.GTNewHorizons:twilightforest:2.7.45")
 
     runtimeOnlyNonPublishable("com.github.GTNewHorizons:Angelica:2.2.28:dev")
     runtimeOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.8.93-GTNH:dev")

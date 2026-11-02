@@ -89,6 +89,10 @@ public class CommonProxy {
         com.aizistral.enigmaticlegacy.crafting.EnigmaticRecipeRegistrar.register();
         com.aizistral.enigmaticlegacy.crafting.JsonRecipeLoader.load();
 
+        if (cpw.mods.fml.common.Loader.isModLoaded("TwilightForest")) {
+            com.aizistral.enigmaticlegacy.compat.twilightforest.TwilightForestCompat.registerLoot();
+        }
+
         this.registerHiddenRecipes();
         this.registerBrewingRecipes();
 

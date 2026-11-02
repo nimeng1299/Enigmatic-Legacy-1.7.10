@@ -83,6 +83,7 @@ import com.aizistral.enigmaticlegacy.compat.Tuple;
 import com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat;
 import com.aizistral.enigmaticlegacy.compat.nbt.CompoundTag;
 import com.aizistral.enigmaticlegacy.compat.network.PacketDistributor;
+import com.aizistral.enigmaticlegacy.compat.twilightforest.TwilightForestCompat;
 import com.aizistral.enigmaticlegacy.compat.villagenames.VillageNamesCompat;
 import com.aizistral.enigmaticlegacy.config.EtheriumConfigHandler;
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
@@ -165,6 +166,7 @@ public class EnigmaticEventHandler {
     private static final String NBT_KEY_ENABLESCROLL = "enigmaticlegacy.scrolls_enabled";
     private static final String VILLAGE_NAMES_MODID = "VillageNames";
     private static final String ET_FUTURUM_MODID = "etfuturum";
+    private static final String TWILIGHT_FOREST_MODID = "TwilightForest";
 
     public static final ResourceLocation FIREBAR_LOCATION = new ResourceLocation(
         EnigmaticLegacy.MODID,
@@ -1982,7 +1984,7 @@ public class EnigmaticEventHandler {
             this.addDropWithChance(event, new ItemStack(Items.egg, 1), 50);
         } else if (killed instanceof EntityWither) {
             this.addDrop(event, this.getRandomSizeStack(EnigmaticItems.EVIL_ESSENCE, 1, 4));
-        } else if (isShulker(killed)) {
+        } else if (isShulker(killed) || isTwilightForestGolem(killed)) {
             this.addDropWithChance(event, new ItemStack(EnigmaticItems.ASTRAL_DUST, 1), 20);
         } else if (killed.getClass() == EntitySilverfish.class) {
             // NO-OP
@@ -2077,6 +2079,10 @@ public class EnigmaticEventHandler {
 
     private static boolean isShulker(EntityLivingBase entity) {
         return Loader.isModLoaded(ET_FUTURUM_MODID) && EtFuturumCompat.isShulker(entity);
+    }
+
+    private static boolean isTwilightForestGolem(EntityLivingBase entity) {
+        return Loader.isModLoaded(TWILIGHT_FOREST_MODID) && TwilightForestCompat.isTowerGolem(entity);
     }
 
     private static boolean isGuardian(EntityLivingBase entity) {
