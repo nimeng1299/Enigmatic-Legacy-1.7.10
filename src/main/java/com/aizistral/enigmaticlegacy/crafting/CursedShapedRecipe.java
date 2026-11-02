@@ -2,7 +2,6 @@ package com.aizistral.enigmaticlegacy.crafting;
 
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.ShapedRecipes;
 import net.minecraft.world.World;
 
@@ -10,15 +9,14 @@ import com.aizistral.enigmaticlegacy.api.items.ITaintable;
 import com.aizistral.enigmaticlegacy.helpers.ItemNBTHelper;
 
 /**
- * Shaped recipe wrapper that only matches when every taintable item placed in
- * the crafting grid is tainted.
+ * Shaped recipe that only matches when every taintable item placed in the
+ * crafting grid is tainted. Extends {@link ShapedRecipes} so NEI's default
+ * shaped recipe handler can display it.
  */
-public class CursedShapedRecipe implements IRecipe {
-
-    private final ShapedRecipes wrapped;
+public class CursedShapedRecipe extends ShapedRecipes {
 
     public CursedShapedRecipe(int width, int height, ItemStack[] items, ItemStack result) {
-        this.wrapped = new ShapedRecipes(width, height, items, result);
+        super(width, height, items, result);
     }
 
     @Override
@@ -32,22 +30,7 @@ public class CursedShapedRecipe implements IRecipe {
             }
         }
 
-        return this.wrapped.matches(inv, world);
-    }
-
-    @Override
-    public ItemStack getCraftingResult(InventoryCrafting inv) {
-        return this.wrapped.getCraftingResult(inv);
-    }
-
-    @Override
-    public int getRecipeSize() {
-        return this.wrapped.getRecipeSize();
-    }
-
-    @Override
-    public ItemStack getRecipeOutput() {
-        return this.wrapped.getRecipeOutput();
+        return super.matches(inv, world);
     }
 
     /**

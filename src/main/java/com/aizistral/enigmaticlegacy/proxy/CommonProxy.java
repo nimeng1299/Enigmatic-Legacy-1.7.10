@@ -74,6 +74,7 @@ public class CommonProxy {
         com.aizistral.enigmaticlegacy.registries.EnigmaticEffects.init();
         com.aizistral.enigmaticlegacy.registries.EnigmaticEnchantments.init();
         EnigmaticItems.init();
+        com.aizistral.enigmaticlegacy.registries.EnigmaticLootModifiers.register();
         EnigmaticEntities.init();
 
         cpw.mods.fml.common.network.NetworkRegistry.INSTANCE.registerGuiHandler(

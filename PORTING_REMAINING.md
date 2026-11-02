@@ -2,7 +2,7 @@
 
 > 对照基线：`E:\code\Enigmatic-Legacy-1.20.x`（1.20.1 / Forge）
 > 当前状态：`./gradlew build` 通过；服务端冒烟测试与客户端渲染截图验证通过
-> 最后更新：2026-10-30
+> 最后更新：2026-11-02
 
 图例：**未实现** = 1.7.10 可做但尚未做；**部分实现** = 有简化版或仅保留数据结构；**平台不适用** = 1.7.10 无对应机制，不建议移植。
 
@@ -19,9 +19,9 @@
 | Architect Eye（`ENIGMATIC_EYE`） | 玩家第一次打开任意原版箱子（持久标记 `LootedArchitectEye`） | 可做 |
 | Ichor Bottle | 每人仅能获得一次（持久标记 `LootedIchorBottle`），重复生成时移除 | 可做 |
 | Astral Fruit | 诅咒玩家第一次打开末地城宝箱（持久标记 `LootedFirstEndCityChest`） | 有限支持（无结构战利品表，需按维度/坐标近似判定） |
-| Heart of the Earth | 考古可疑方块 3%（`CustomLoot.EarthHeartChance`） | 平台不适用（1.7.10 无考古系统） |
+| Heart of the Earth | 考古可疑方块 3%（`CustomLoot.EarthHeartChance`）；同时以权重 7 注入上世界地牢宝箱 | 地牢宝箱途径**已实现**（`ChestGenHooks`）；考古平台不适用（1.7.10 无考古系统） |
 
-现状：`objects/SpecialLootModifier` 只保留了配置项，`registries/EnigmaticLootModifiers` 是空壳，**没有任何战利品注入逻辑**。
+现状：`objects/SpecialLootModifier` 只保留了配置项，`registries/EnigmaticLootModifiers` 仅实现了 Earth Heart 一项；**Earth Heart 的地牢宝箱注入已实现**（`EnigmaticLootModifiers.register()`，六类地牢宝箱，权重 7，受 `CustomDungeonLootEnabled` 与 `EarthHeartEnabled` 控制），其余三项（Architect Eye / Ichor Bottle / Astral Fruit）**没有任何战利品注入逻辑**。
 
 建议实现：监听 Forge 的 `PlayerOpenContainerEvent`，在服务端识别 `ContainerChest` / 末影箱，按玩家持久 NBT 一次性注入物品；末地城宝箱可用维度 + 距离末地岛中心的范围判定近似。
 
@@ -193,7 +193,7 @@
 ## 六、平台差异导致的功能降级
 
 1. **药水效果缺失**：1.7.10 缺少部分药水物品变体（缓慢下降、抗性提升、跳跃提升、失明等）。`compat/Potions.damageFor` 对无法映射的效果返回 `-1`，相关酿造配方存在但产物无效。`MobEffects.SLOW_FALLING` 被近似映射为缓慢（`Potion.moveSlowdown`）。
-2. **无考古系统**：Earth Heart 无法通过可疑方块获得，`CustomLoot.EarthHeartChance` 配置保留但无效。
+2. **无考古系统**：Earth Heart 无法通过可疑方块获得，`CustomLoot.EarthHeartChance` 配置保留但无效；地牢宝箱途径已通过 `EnigmaticLootModifiers.register()` 用 `ChestGenHooks` 实现（`DUNGEON_CHEST`、`MINESHAFT_CORRIDOR`、`STRONGHOLD_CORRIDOR`/`CROSSING`、沙漠/丛林神庙宝箱，权重 7）。
 3. **无进度 / 配方书**：对应触发器与配方解锁逻辑均不适用。
 4. **依赖替代**：Patchouli → 自绘 `AcknowledgmentBookScreen`；Curios → Baubles-Expanded；JEI → 未接入 NEI。
 5. **龙首 / 部分生物掉落**：1.7.10 无龙首、潜影贝、猪灵等，相关掉落分支已跳过。

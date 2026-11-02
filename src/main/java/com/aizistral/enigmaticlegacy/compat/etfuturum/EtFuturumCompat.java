@@ -76,6 +76,10 @@ public final class EtFuturumCompat {
         return blockStack(ModBlocks.SHROOMLIGHT);
     }
 
+    public static ItemStack witherRose() {
+        return blockStack(ModBlocks.WITHER_ROSE);
+    }
+
     public static ItemStack cryingObsidian() {
         return blockStack(ModBlocks.CRYING_OBSIDIAN);
     }

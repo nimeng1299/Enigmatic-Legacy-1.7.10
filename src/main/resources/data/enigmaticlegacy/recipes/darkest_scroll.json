@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "enigmaticlegacy:is_enabled",
+      "item": "enigmaticlegacy:darkest_scroll"
+    }
+  ],
+  "pattern": [
+    "DWD",
+    "XKX",
+    "DWD"
+  ],
+  "key": {
+    "D": {
+      "item": "minecraft:black_dye"
+    },
+    "W": {
+      "item": "minecraft:wither_rose"
+    },
+    "X": {
+      "item": "enigmaticlegacy:thicc_scroll"
+    },
+    "K": {
+      "item": "minecraft:wither_skeleton_skull"
+    }
+  },
+  "result": {
+    "item": "enigmaticlegacy:darkest_scroll"
+  }
+}

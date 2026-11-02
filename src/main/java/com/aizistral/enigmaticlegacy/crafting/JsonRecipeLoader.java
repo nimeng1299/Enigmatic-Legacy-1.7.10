@@ -304,6 +304,9 @@ public final class JsonRecipeLoader {
         if ("minecraft:dandelion".equals(id)) return new ItemStack(Blocks.yellow_flower, 1, 0);
         if ("minecraft:poppy".equals(id)) return new ItemStack(Blocks.red_flower, 1, 0);
         if ("minecraft:phantom_membrane".equals(id)) return new ItemStack(Items.leather);
+        if ("minecraft:wither_rose".equals(id)) {
+            return etFuturumStack(id, new ItemStack(Blocks.double_plant, 1, 4));
+        }
         if ("minecraft:heart_of_the_sea".equals(id)) return new ItemStack(Items.diamond);
         if ("minecraft:nautilus_shell".equals(id)) return new ItemStack(Items.diamond);
         if ("minecraft:prismarine_crystals".equals(id)) {
@@ -373,6 +376,9 @@ public final class JsonRecipeLoader {
                 break;
             case "minecraft:shroomlight":
                 stack = EtFuturumCompat.shroomlight();
+                break;
+            case "minecraft:wither_rose":
+                stack = EtFuturumCompat.witherRose();
                 break;
             case "minecraft:crying_obsidian":
                 stack = EtFuturumCompat.cryingObsidian();
