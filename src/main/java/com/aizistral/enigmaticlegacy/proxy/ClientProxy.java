@@ -3,17 +3,27 @@ package com.aizistral.enigmaticlegacy.proxy;
 import net.minecraft.client.renderer.entity.RenderSnowball;
 import net.minecraft.init.Items;
 
+import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.entities.EnigmaticPotionEntity;
 import com.aizistral.enigmaticlegacy.entities.PermanentItemEntity;
 import com.aizistral.enigmaticlegacy.entities.UltimateWitherSkullEntity;
+import com.gtnewhorizon.gtnhlib.client.model.loading.ModelRegistry;
 
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
 public class ClientProxy extends CommonProxy {
+
+    @Override
+    public void preInit(FMLPreInitializationEvent event) {
+        super.preInit(event);
+
+        ModelRegistry.registerModid(EnigmaticLegacy.MODID);
+    }
 
     @Override
     public void init(FMLInitializationEvent event) {

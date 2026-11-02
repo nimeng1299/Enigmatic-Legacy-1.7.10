@@ -22,6 +22,8 @@ import com.aizistral.enigmaticlegacy.items.CosmicCake;
 import com.aizistral.enigmaticlegacy.items.EndAnchor;
 import com.aizistral.enigmaticlegacy.items.generic.GenericBlockItem;
 import com.aizistral.etherium.blocks.BlockEtherium;
+import com.gtnewhorizon.gtnhlib.blockstate.properties.IntegerBlockProperty;
+import com.gtnewhorizon.gtnhlib.blockstate.registry.BlockPropertyRegistry;
 
 public class EnigmaticBlocks extends AbstractRegistry<Block> {
 
@@ -94,6 +96,12 @@ public class EnigmaticBlocks extends AbstractRegistry<Block> {
                 block,
                 GenericBlockItem.getDefaultProperties()
                     .rarity(EnumRarity.epic)));
+
+        BlockPropertyRegistry.registerBlockItemProperty(BIG_LAMP, BlockBigLamp.HANGING, false);
+        BlockPropertyRegistry.registerBlockItemProperty(BIG_SHROOMLAMP, BlockBigLamp.HANGING, false);
+        BlockPropertyRegistry.registerBlockItemProperty(BIG_REDSTONELAMP, BlockBigLamp.HANGING, false);
+        BlockPropertyRegistry.registerBlockItemProperty(COSMIC_CAKE, IntegerBlockProperty.meta("bites"), 0);
+        BlockPropertyRegistry.registerBlockItemProperty(END_ANCHOR, IntegerBlockProperty.meta("charges"), 0);
     }
 
     protected void register(String name, Supplier<Block> blockSupplier, BlockItemSupplier itemSupplier) {

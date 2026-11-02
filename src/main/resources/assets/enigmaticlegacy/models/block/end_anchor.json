@@ -3,7 +3,7 @@
 	"render_type": "cutout",
 	"texture_size": [64, 64],
 	"textures": {
-		"particle": "minecraft:block/end_portal_frame_top"
+		"particle": "blocks/endframe_top"
 	},
 	"elements": [
 		{

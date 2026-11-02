@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "enigmaticlegacy:block/etherium_block"
+    "all": "enigmaticlegacy:blocks/block/etherium_block"
   }
 }

@@ -8,6 +8,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
 import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
+import com.gtnewhorizon.gtnhlib.client.model.ModelISBRH;
+
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 public class BlockMassiveLamp extends Block {
 
@@ -18,6 +22,12 @@ public class BlockMassiveLamp extends Block {
         this.setLightLevel(1.0F);
         this.setStepSound(Block.soundTypeGlass);
         this.setBlockTextureName(EnigmaticLegacy.MODID + ":massive_lamp");
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public int getRenderType() {
+        return ModelISBRH.JSON_ISBRH_ID;
     }
 
     @Override

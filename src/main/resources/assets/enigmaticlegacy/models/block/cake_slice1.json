@@ -4,8 +4,8 @@
 	"render_type": "cutout",
 	"texture_size": [128, 128],
 	"textures": {
-		"0": "enigmaticlegacy:block/cake_model",
-		"particle": "enigmaticlegacy:block/cake_particle"
+		"0": "enigmaticlegacy:blocks/block/cake_model",
+		"particle": "enigmaticlegacy:blocks/block/cake_particle"
 	},
 	"elements": [
 		{
