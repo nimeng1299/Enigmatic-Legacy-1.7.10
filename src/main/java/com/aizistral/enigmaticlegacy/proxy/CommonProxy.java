@@ -168,15 +168,15 @@ public class CommonProxy {
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.ASCENSION_AMULET)) {
             com.aizistral.enigmaticlegacy.crafting.HiddenRecipe.addRecipe(
                 new net.minecraft.item.ItemStack(EnigmaticItems.ASCENSION_AMULET),
-                new net.minecraft.item.ItemStack(net.minecraft.init.Items.diamond),
+                CommonProxy.amethystOrDiamond(),
                 new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST),
-                new net.minecraft.item.ItemStack(net.minecraft.init.Items.diamond),
+                CommonProxy.amethystOrDiamond(),
                 new net.minecraft.item.ItemStack(EnigmaticItems.ETHERIUM_INGOT),
                 new net.minecraft.item.ItemStack(EnigmaticItems.ENIGMATIC_AMULET),
                 new net.minecraft.item.ItemStack(EnigmaticItems.ETHERIUM_INGOT),
-                new net.minecraft.item.ItemStack(net.minecraft.init.Items.ghast_tear),
+                CommonProxy.dragonBreathOrGhastTear(),
                 new net.minecraft.item.ItemStack(EnigmaticItems.COSMIC_HEART),
-                new net.minecraft.item.ItemStack(net.minecraft.init.Items.ghast_tear));
+                CommonProxy.dragonBreathOrGhastTear());
         }
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.ELDRITCH_AMULET)) {
@@ -185,9 +185,9 @@ public class CommonProxy {
                 new net.minecraft.item.ItemStack(EnigmaticItems.EVIL_ESSENCE),
                 new net.minecraft.item.ItemStack(EnigmaticItems.ABYSSAL_HEART),
                 new net.minecraft.item.ItemStack(EnigmaticItems.EVIL_ESSENCE),
-                new net.minecraft.item.ItemStack(net.minecraft.init.Items.gold_ingot),
+                CommonProxy.netheriteIngotOrGold(),
                 new net.minecraft.item.ItemStack(EnigmaticItems.ASCENSION_AMULET),
-                new net.minecraft.item.ItemStack(net.minecraft.init.Items.gold_ingot),
+                CommonProxy.netheriteIngotOrGold(),
                 new net.minecraft.item.ItemStack(EnigmaticItems.TWISTED_HEART),
                 new net.minecraft.item.ItemStack(net.minecraft.init.Items.nether_star),
                 new net.minecraft.item.ItemStack(EnigmaticItems.TWISTED_HEART));
@@ -206,6 +206,39 @@ public class CommonProxy {
                 new net.minecraft.item.ItemStack(EnigmaticItems.COSMIC_HEART),
                 new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST));
         }
+    }
+
+    private static net.minecraft.item.ItemStack amethystOrDiamond() {
+        if (cpw.mods.fml.common.Loader.isModLoaded("etfuturum")) {
+            net.minecraft.item.ItemStack stack = com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat
+                .amethystShard();
+
+            if (stack != null) return stack;
+        }
+
+        return new net.minecraft.item.ItemStack(net.minecraft.init.Items.diamond);
+    }
+
+    private static net.minecraft.item.ItemStack dragonBreathOrGhastTear() {
+        if (cpw.mods.fml.common.Loader.isModLoaded("etfuturum")) {
+            net.minecraft.item.ItemStack stack = com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat
+                .dragonBreath();
+
+            if (stack != null) return stack;
+        }
+
+        return new net.minecraft.item.ItemStack(net.minecraft.init.Items.ghast_tear);
+    }
+
+    private static net.minecraft.item.ItemStack netheriteIngotOrGold() {
+        if (cpw.mods.fml.common.Loader.isModLoaded("etfuturum")) {
+            net.minecraft.item.ItemStack stack = com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat
+                .netheriteIngot();
+
+            if (stack != null) return stack;
+        }
+
+        return new net.minecraft.item.ItemStack(net.minecraft.init.Items.gold_ingot);
     }
 
     public void serverStarting(FMLServerStartingEvent event) {
