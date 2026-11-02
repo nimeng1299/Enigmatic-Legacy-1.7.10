@@ -10,7 +10,6 @@ import java.util.WeakHashMap;
 
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureAttribute;
@@ -81,8 +80,10 @@ import com.aizistral.enigmaticlegacy.compat.PlayerCooldowns;
 import com.aizistral.enigmaticlegacy.compat.PotionEffect;
 import com.aizistral.enigmaticlegacy.compat.SoundEvents;
 import com.aizistral.enigmaticlegacy.compat.Tuple;
+import com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat;
 import com.aizistral.enigmaticlegacy.compat.nbt.CompoundTag;
 import com.aizistral.enigmaticlegacy.compat.network.PacketDistributor;
+import com.aizistral.enigmaticlegacy.compat.villagenames.VillageNamesCompat;
 import com.aizistral.enigmaticlegacy.config.EtheriumConfigHandler;
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
 import com.aizistral.enigmaticlegacy.effects.GrowingBloodlustEffect;
@@ -136,6 +137,7 @@ import com.google.common.collect.Multimap;
 import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
 
 import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.Event.Result;
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -144,7 +146,6 @@ import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
 
 /**
  * Generic event handler of the whole mod. This is the 1.7.10 server/gameplay
@@ -162,6 +163,8 @@ public class EnigmaticEventHandler {
     private static final String NBT_KEY_ENABLESPELLSTONE = "enigmaticlegacy.spellstones_enabled";
     private static final String NBT_KEY_ENABLERING = "enigmaticlegacy.rings_enabled";
     private static final String NBT_KEY_ENABLESCROLL = "enigmaticlegacy.scrolls_enabled";
+    private static final String VILLAGE_NAMES_MODID = "VillageNames";
+    private static final String ET_FUTURUM_MODID = "etfuturum";
 
     public static final ResourceLocation FIREBAR_LOCATION = new ResourceLocation(
         EnigmaticLegacy.MODID,
@@ -1936,17 +1939,27 @@ public class EnigmaticEventHandler {
             if (((EntitySkeleton) killed).getSkeletonType() == 1) {
                 this.addDrop(event, this.getRandomSizeStack(Items.blaze_powder, 0, 3));
                 this.addDropWithChance(event, new ItemStack(Items.ghast_tear, 1), 20);
-                this.addDropWithChance(
-                    event,
-                    new ItemStack(this.getCompatItem("etfuturum", "netherite_scrap", Items.iron_ingot), 1),
-                    7);
+                this.addDropWithChance(event, new ItemStack(getNetheriteScrap(), 1), 7);
             } else {
                 this.addDrop(event, this.getRandomSizeStack(Items.arrow, 3, 15));
             }
-        } else if (this.isZombieOrHusk(killed)) {
+        } else if (isZombieOrHusk(killed)) {
             this.addDropWithChance(event, this.getRandomSizeStack(Items.slime_ball, 1, 3), 25);
         } else if (killed.getClass() == EntitySpider.class || killed.getClass() == EntityCaveSpider.class) {
             this.addDrop(event, this.getRandomSizeStack(Items.string, 2, 12));
+        } else if (isGuardian(killed)) {
+            if (isElderGuardian(killed)) {
+                this.addDrop(event, this.getRandomSizeStack(getPrismarineCrystals(), 4, 16));
+                this.addDrop(event, this.getRandomSizeStack(getPrismarineShard(), 7, 28));
+                this.addOneOf(
+                    event,
+                    new ItemStack(EnigmaticItems.GUARDIAN_HEART, 1),
+                    new ItemStack(Items.golden_apple, 1, 1),
+                    new ItemStack(Items.ender_eye, 1));
+            } else {
+                this.addDropWithChance(event, new ItemStack(getPrismarineShard(), 1), 15);
+                this.addDrop(event, this.getRandomSizeStack(getPrismarineCrystals(), 2, 5));
+            }
         } else if (killed.getClass() == EntityEnderman.class) {
             this.addDropWithChance(event, this.getRandomSizeStack(Items.ender_eye, 1, 2), 40);
         } else if (killed.getClass() == EntityBlaze.class) {
@@ -1956,25 +1969,20 @@ public class EnigmaticEventHandler {
             this.addDropWithChance(event, this.getRandomSizeStack(Items.glowstone_dust, 1, 7), 30);
         } else if (killed.getClass() == EntityWitch.class) {
             this.addDropWithChance(event, new ItemStack(Items.ghast_tear, 1), 30);
-            this.addDropWithChance(
-                event,
-                this.getRandomSizeStack(this.getCompatItem("etfuturum", "phantom_membrane", Items.leather), 1, 3),
-                50);
+            this.addDropWithChance(event, this.getRandomSizeStack(Items.leather, 1, 3), 50);
         } else if (killed.getClass() == EntityVillager.class) {
             this.addDrop(event, this.getRandomSizeStack(Items.emerald, 2, 6));
         } else if (killed.getClass() == EntityCreeper.class) {
             this.addDrop(event, this.getRandomSizeStack(Items.gunpowder, 4, 12));
         } else if (killed.getClass() == EntityGhast.class) {
-            this.addDrop(
-                event,
-                this.getRandomSizeStack(this.getCompatItem("etfuturum", "phantom_membrane", Items.leather), 1, 4));
+            this.addDrop(event, this.getRandomSizeStack(Items.leather, 1, 4));
         } else if (killed.getClass() == EntityMagmaCube.class) {
             this.addDropWithChance(event, new ItemStack(Items.blaze_powder, 1), 50);
         } else if (killed.getClass() == EntityChicken.class) {
             this.addDropWithChance(event, new ItemStack(Items.egg, 1), 50);
         } else if (killed instanceof EntityWither) {
             this.addDrop(event, this.getRandomSizeStack(EnigmaticItems.EVIL_ESSENCE, 1, 4));
-        } else if (this.isCompatEntity(killed, "shulker")) {
+        } else if (isShulker(killed)) {
             this.addDropWithChance(event, new ItemStack(EnigmaticItems.ASTRAL_DUST, 1), 20);
         } else if (killed.getClass() == EntitySilverfish.class) {
             // NO-OP
@@ -2064,22 +2072,44 @@ public class EnigmaticEventHandler {
 
     private static boolean isZombieOrHusk(EntityLivingBase entity) {
         return (entity.getClass() == EntityZombie.class && !((EntityZombie) entity).isVillager())
-            || isCompatEntity(entity, "husk");
+            || (Loader.isModLoaded(ET_FUTURUM_MODID) && EtFuturumCompat.isHusk(entity));
     }
 
-    private static boolean isCompatEntity(EntityLivingBase entity, String name) {
-        String id = EntityList.getEntityString(entity);
-
-        if (id == null) return false;
-
-        String lower = id.toLowerCase();
-        String target = name.toLowerCase();
-        return lower.equals(target) || lower.endsWith("." + target) || lower.endsWith(":" + target);
+    private static boolean isShulker(EntityLivingBase entity) {
+        return Loader.isModLoaded(ET_FUTURUM_MODID) && EtFuturumCompat.isShulker(entity);
     }
 
-    private static Item getCompatItem(String modid, String name, Item fallback) {
-        Item item = GameRegistry.findItem(modid, name);
-        return item != null ? item : fallback;
+    private static boolean isGuardian(EntityLivingBase entity) {
+        return Loader.isModLoaded(VILLAGE_NAMES_MODID) && VillageNamesCompat.isGuardian(entity);
+    }
+
+    private static boolean isElderGuardian(EntityLivingBase entity) {
+        return Loader.isModLoaded(VILLAGE_NAMES_MODID) && VillageNamesCompat.isElderGuardian(entity);
+    }
+
+    private static Item getNetheriteScrap() {
+        Item scrap = Loader.isModLoaded(ET_FUTURUM_MODID) ? EtFuturumCompat.netheriteScrap() : null;
+        return scrap != null ? scrap : Items.iron_ingot;
+    }
+
+    private static Item getPrismarineShard() {
+        Item shard = Loader.isModLoaded(VILLAGE_NAMES_MODID) ? VillageNamesCompat.prismarineShard() : null;
+
+        if (shard == null && Loader.isModLoaded(ET_FUTURUM_MODID)) {
+            shard = EtFuturumCompat.prismarineShard();
+        }
+
+        return shard != null ? shard : Items.flint;
+    }
+
+    private static Item getPrismarineCrystals() {
+        Item crystals = Loader.isModLoaded(VILLAGE_NAMES_MODID) ? VillageNamesCompat.prismarineCrystals() : null;
+
+        if (crystals == null && Loader.isModLoaded(ET_FUTURUM_MODID)) {
+            crystals = EtFuturumCompat.prismarineCrystals();
+        }
+
+        return crystals != null ? crystals : Items.glowstone_dust;
     }
 
     public void addDrop(LivingDropsEvent event, ItemStack drop) {
