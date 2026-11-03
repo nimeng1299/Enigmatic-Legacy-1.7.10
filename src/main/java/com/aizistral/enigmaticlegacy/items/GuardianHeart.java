@@ -27,6 +27,7 @@ import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.Vanishable;
 import com.aizistral.enigmaticlegacy.compat.network.PacketDistributor;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
+import com.aizistral.enigmaticlegacy.compat.villagenames.VillageNamesCompat;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.items.generic.ItemBase;
@@ -37,10 +38,14 @@ import com.aizistral.omniconfig.wrappers.Omniconfig;
 import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 import com.google.common.collect.Lists;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public class GuardianHeart extends ItemBase implements ICursed, Vanishable {
+
+    private static final String VILLAGE_NAMES_MODID = "VillageNames";
+    private static final int GUARDIAN_ASSIST_RANGE = 12;
 
     public static final List<Class<? extends EntityLivingBase>> excludedMobs = Lists
         .newArrayList(EntityPigZombie.class);
@@ -200,6 +205,36 @@ public class GuardianHeart extends ItemBase implements ICursed, Vanishable {
 
             }
 
+            // Passive ability: guardians accompanying the heart bearer ignore them
+            // and hunt nearby monsters on their own.
+            for (IMob monster : genericMobs) {
+                EntityLivingBase guardian = (EntityLivingBase) monster;
+
+                if (!(guardian instanceof EntityLiving) || !isRegularGuardian(guardian)
+                    || ((EntityLiving) guardian).getAttackTarget() != null) continue;
+
+                Vector3 vec = Vector3.fromEntityCenter(guardian);
+                List<IMob> surroundingMobs = player.worldObj
+                    .getEntitiesWithinAABB(
+                        IMob.class,
+                        SuperpositionHandler.getBoundingBoxAroundEntity(guardian, GUARDIAN_ASSIST_RANGE))
+                    .stream()
+                    .filter(
+                        living -> ((EntityLivingBase) living).isEntityAlive()
+                            && guardian.canEntityBeSeen((Entity) living))
+                    .collect(java.util.stream.Collectors.toList());
+                IMob closestMonster = (IMob) SuperpositionHandler.getClosestEntity(
+                    (List<EntityLivingBase>) (List) surroundingMobs,
+                    checked -> checked != guardian && !isGuardianEntity(checked),
+                    vec.x,
+                    vec.y,
+                    vec.z);
+
+                if (closestMonster != null) {
+                    this.setAttackTarget(monster, closestMonster);
+                }
+            }
+
         }
     }
 
@@ -208,7 +243,16 @@ public class GuardianHeart extends ItemBase implements ICursed, Vanishable {
             if (excludedClass.isInstance(entity)) return true;
         }
 
-        return false;
+        return isGuardianEntity(entity);
+    }
+
+    private static boolean isGuardianEntity(EntityLivingBase entity) {
+        return Loader.isModLoaded(VILLAGE_NAMES_MODID) && VillageNamesCompat.isGuardian(entity);
+    }
+
+    private static boolean isRegularGuardian(EntityLivingBase entity) {
+        return Loader.isModLoaded(VILLAGE_NAMES_MODID) && VillageNamesCompat.isGuardian(entity)
+            && !VillageNamesCompat.isElderGuardian(entity);
     }
 
     private void setAttackTarget(IMob monster, IMob otherMonster) {

@@ -824,7 +824,20 @@ public class EnigmaticEventHandler {
             }
         }
 
-        // 1.7.10: Guardian/Elder Guardian do not exist in this version.
+        // Village Names backports guardians and ocean monuments to 1.7.10.
+        if (isGuardian(insect) && !isElderGuardian(insect)) {
+            if (SuperpositionHandler.hasItem(player, EnigmaticItems.GUARDIAN_HEART)
+                && SuperpositionHandler.isTheCursedOne(player)) {
+                boolean isBlacklisted = AGERED_GUARDIANS.containsEntry(player, insect);
+
+                if (insect.getAITarget() != player && !isBlacklisted) {
+                    // 1.7.10: this event is not cancelable, so reset the target directly.
+                    insect.setAttackTarget(null);
+                } else if (!isBlacklisted) {
+                    AGERED_GUARDIANS.put(player, insect);
+                }
+            }
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
