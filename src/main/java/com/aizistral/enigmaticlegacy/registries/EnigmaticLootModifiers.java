@@ -17,6 +17,12 @@ public class EnigmaticLootModifiers {
         ChestGenHooks.MINESHAFT_CORRIDOR, ChestGenHooks.STRONGHOLD_CORRIDOR, ChestGenHooks.STRONGHOLD_CROSSING,
         ChestGenHooks.PYRAMID_DESERT_CHEST, ChestGenHooks.PYRAMID_JUNGLE_CHEST };
 
+    private static final String[] GOLEM_HEART_COMMON_CHESTS = { ChestGenHooks.DUNGEON_CHEST,
+        ChestGenHooks.MINESHAFT_CORRIDOR };
+
+    private static final String[] GOLEM_HEART_TEMPLE_CHESTS = { ChestGenHooks.PYRAMID_DESERT_CHEST,
+        ChestGenHooks.PYRAMID_JUNGLE_CHEST };
+
     private static final EnigmaticLootModifiers INSTANCE = new EnigmaticLootModifiers();
 
     private EnigmaticLootModifiers() {
@@ -25,6 +31,11 @@ public class EnigmaticLootModifiers {
 
     public static void register() {
         if (!OmniconfigHandler.customDungeonLootEnabled.getValue()) return;
+
+        if (OmniconfigHandler.isItemEnabled(EnigmaticItems.GOLEM_HEART)) {
+            addToChests(EnigmaticItems.GOLEM_HEART, 6, GOLEM_HEART_COMMON_CHESTS);
+            addToChests(EnigmaticItems.GOLEM_HEART, 3, GOLEM_HEART_TEMPLE_CHESTS);
+        }
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.EARTH_HEART)) {
             addToAll(EnigmaticItems.EARTH_HEART, 7);
@@ -36,7 +47,11 @@ public class EnigmaticLootModifiers {
     }
 
     private static void addToAll(Item item, int weight) {
-        for (String chest : OVERWORLD_DUNGEON_CHESTS) {
+        addToChests(item, weight, OVERWORLD_DUNGEON_CHESTS);
+    }
+
+    private static void addToChests(Item item, int weight, String[] chests) {
+        for (String chest : chests) {
             ChestGenHooks.addItem(chest, new WeightedRandomChestContent(new ItemStack(item), 1, 1, weight));
         }
     }

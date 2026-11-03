@@ -28,6 +28,7 @@ import com.aizistral.enigmaticlegacy.compat.ForgeRegistries;
 import com.aizistral.enigmaticlegacy.compat.Screen;
 import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
+import com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
@@ -37,6 +38,7 @@ import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -112,9 +114,15 @@ public class GolemHeart extends ItemSpellstoneCurio implements ISpellstone {
             .forEach(entry -> {
                 Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry));
 
+                // 1.7.10 has no elytra; EtFuturum registers it under its own namespace.
+                if (item == null && "minecraft:elytra".equals(entry) && Loader.isModLoaded("etfuturum")) {
+                    ItemStack elytra = EtFuturumCompat.elytra();
+                    item = elytra != null ? elytra.getItem() : null;
+                }
+
                 if (item != null) {
                     EXCLUDED_ARMOR.add(item);
-                } else {
+                } else if (!"minecraft:elytra".equals(entry)) {
                     EnigmaticLegacy.LOGGER.error("Could not find excluded item when parsing config: " + entry);
                 }
             });
@@ -136,6 +144,8 @@ public class GolemHeart extends ItemSpellstoneCurio implements ISpellstone {
         this.immunityList.add(DamageTypes.CRAMMING);
         this.immunityList.add(DamageTypes.IN_WALL);
         this.immunityList.add(DamageTypes.FALLING_BLOCK);
+        // 1.7.10 anvils deal their own damage type instead of FALLING_BLOCK.
+        this.immunityList.add(DamageTypes.ANVIL);
         this.immunityList.add(DamageTypes.SWEET_BERRY_BUSH);
 
         Supplier<Float> meleeResistanceSupplier = () -> meleeResistance.getValue()
