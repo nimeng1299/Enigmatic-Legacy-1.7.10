@@ -63,10 +63,16 @@ public class AttributeMap {
             net.minecraft.entity.ai.attributes.AttributeModifier modifier = (net.minecraft.entity.ai.attributes.AttributeModifier) entry
                 .getValue();
 
+            // 1.7.10 keeps modifier instances by identity and forbids duplicate UUIDs, so the
+            // stored instance must be resolved and removed before (re)applying or dropping it.
+            net.minecraft.entity.ai.attributes.AttributeModifier existing = instance.getModifier(modifier.getID());
+
+            if (existing != null) {
+                instance.removeModifier(existing);
+            }
+
             if (add) {
                 instance.applyModifier(modifier);
-            } else {
-                instance.removeModifier(modifier);
             }
         }
     }
