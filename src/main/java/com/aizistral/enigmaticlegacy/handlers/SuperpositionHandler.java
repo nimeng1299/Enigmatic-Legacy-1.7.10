@@ -1045,6 +1045,10 @@ public class SuperpositionHandler {
     }
 
     public static WorldServer backToSpawn(EntityPlayerMP serverPlayer) {
+        return backToSpawn(serverPlayer, 0.0D);
+    }
+
+    public static WorldServer backToSpawn(EntityPlayerMP serverPlayer, double yOffset) {
         int respawnDimension = serverPlayer.getBedLocation(serverPlayer.dimension) != null ? serverPlayer.dimension : 0;
         WorldServer respawnWorld = SuperpositionHandler.getWorld(respawnDimension);
         net.minecraft.util.ChunkCoordinates spawn = serverPlayer.getBedLocation(respawnDimension);
@@ -1076,7 +1080,7 @@ public class SuperpositionHandler {
             serverPlayer.travelToDimension(respawnDimension);
         }
 
-        serverPlayer.setPositionAndUpdate(spawn.posX + 0.5D, spawn.posY + 0.5D, spawn.posZ + 0.5D);
+        serverPlayer.setPositionAndUpdate(spawn.posX + 0.5D, spawn.posY + 0.5D + yOffset, spawn.posZ + 0.5D);
 
         serverPlayer.worldObj
             .playSoundAtEntity(serverPlayer, "mob.endermen.portal", 1.0F, (float) (0.8F + Math.random() * 0.2D));

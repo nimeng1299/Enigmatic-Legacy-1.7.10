@@ -9,6 +9,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
 import com.aizistral.enigmaticlegacy.api.capabilities.IPlaytimeCounter;
+import com.aizistral.enigmaticlegacy.client.ClientCooldowns;
 import com.aizistral.enigmaticlegacy.client.Quote;
 import com.aizistral.enigmaticlegacy.client.QuoteHandler;
 import com.aizistral.enigmaticlegacy.compat.ParticleTypes;
@@ -24,6 +25,7 @@ import com.aizistral.enigmaticlegacy.packets.clients.PacketPlayerSetlook;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketPortalParticles;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketRecallParticles;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSlotUnlocked;
+import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncCooldown;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncPlayTime;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketUpdateNotification;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketWitherParticles;
@@ -218,6 +220,11 @@ public final class ClientPacketHandlers {
                 SuperpositionHandler.DEFERRED_TOASTS.put(player, 5);
 
             });
+    }
+
+    public static void handleSyncCooldown(PacketSyncCooldown msg) {
+        Minecraft.getMinecraft()
+            .func_152344_a(() -> ClientCooldowns.setCooldown(msg.getItem(), msg.getTicks()));
     }
 
     public static void handleSyncPlayTime(PacketSyncPlayTime msg) {

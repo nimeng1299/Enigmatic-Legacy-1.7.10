@@ -12,6 +12,7 @@ import net.minecraft.world.World;
 
 import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.api.items.ICursed;
+import com.aizistral.enigmaticlegacy.client.ClientCooldowns;
 import com.aizistral.enigmaticlegacy.compat.InteractionHand;
 import com.aizistral.enigmaticlegacy.compat.InteractionResult;
 import com.aizistral.enigmaticlegacy.compat.InteractionResultHolder;
@@ -79,12 +80,24 @@ public class TwistedMirror extends ItemBase implements ICursed, Vanishable {
         ItemLoreHelper.indicateCursedOnesOnly(list);
     }
 
+    @Override
+    @SideOnly(Side.CLIENT)
+    public boolean showDurabilityBar(ItemStack stack) {
+        return ClientCooldowns.isOnCooldown(this);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public double getDurabilityForDisplay(ItemStack stack) {
+        return ClientCooldowns.getRemainingFraction(this);
+    }
+
     public InteractionResultHolder<ItemStack> use(World world, EntityPlayer player, InteractionHand hand) {
         if (EnigmaticLegacy.PROXY.isInVanillaDimension(player) && SuperpositionHandler.isTheCursedOne(player)
             && !com.aizistral.enigmaticlegacy.compat.PlayerCooldowns.isOnCooldown(player, this)) {
 
             if (player instanceof EntityPlayerMP) {
-                SuperpositionHandler.backToSpawn((EntityPlayerMP) player);
+                SuperpositionHandler.backToSpawn((EntityPlayerMP) player, 0.1D);
                 com.aizistral.enigmaticlegacy.compat.PlayerCooldowns.addCooldown(player, this, 200);
             }
 

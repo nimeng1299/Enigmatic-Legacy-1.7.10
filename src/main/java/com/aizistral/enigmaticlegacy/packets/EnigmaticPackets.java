@@ -16,6 +16,7 @@ import com.aizistral.enigmaticlegacy.packets.clients.PacketPortalParticles;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketRecallParticles;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSetEntryState;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSlotUnlocked;
+import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncCooldown;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncPlayTime;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncTransientData;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketUpdateCompass;
@@ -168,6 +169,13 @@ public final class EnigmaticPackets {
             PacketPlayQuote::encode,
             PacketPlayQuote::decode,
             PacketPlayQuote::handle);
+
+        channel.registerMessage(
+            23,
+            PacketSyncCooldown.class,
+            PacketSyncCooldown::encode,
+            PacketSyncCooldown::decode,
+            PacketSyncCooldown::handle);
 
         channel.registerMessage(
             31,
