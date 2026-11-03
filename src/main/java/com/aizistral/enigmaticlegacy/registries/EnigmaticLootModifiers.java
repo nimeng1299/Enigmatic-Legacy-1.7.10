@@ -20,7 +20,7 @@ public class EnigmaticLootModifiers {
     private static final String[] GOLEM_HEART_COMMON_CHESTS = { ChestGenHooks.DUNGEON_CHEST,
         ChestGenHooks.MINESHAFT_CORRIDOR };
 
-    private static final String[] GOLEM_HEART_TEMPLE_CHESTS = { ChestGenHooks.PYRAMID_DESERT_CHEST,
+    private static final String[] PYRAMID_CHESTS = { ChestGenHooks.PYRAMID_DESERT_CHEST,
         ChestGenHooks.PYRAMID_JUNGLE_CHEST };
 
     private static final EnigmaticLootModifiers INSTANCE = new EnigmaticLootModifiers();
@@ -34,7 +34,11 @@ public class EnigmaticLootModifiers {
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.GOLEM_HEART)) {
             addToChests(EnigmaticItems.GOLEM_HEART, 6, GOLEM_HEART_COMMON_CHESTS);
-            addToChests(EnigmaticItems.GOLEM_HEART, 3, GOLEM_HEART_TEMPLE_CHESTS);
+            addToChests(EnigmaticItems.GOLEM_HEART, 3, PYRAMID_CHESTS);
+        }
+
+        if (OmniconfigHandler.isItemEnabled(EnigmaticItems.ANGEL_BLESSING)) {
+            addToChests(EnigmaticItems.ANGEL_BLESSING, 5, PYRAMID_CHESTS);
         }
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.EARTH_HEART)) {

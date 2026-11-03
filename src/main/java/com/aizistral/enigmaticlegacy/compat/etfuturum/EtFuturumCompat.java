@@ -6,6 +6,7 @@ import net.minecraft.item.ItemStack;
 
 import ganymedes01.etfuturum.ModBlocks;
 import ganymedes01.etfuturum.ModItems;
+import ganymedes01.etfuturum.api.elytra.IElytraPlayer;
 import ganymedes01.etfuturum.configuration.configs.ConfigExperiments;
 import ganymedes01.etfuturum.entities.EntityHusk;
 import ganymedes01.etfuturum.entities.EntityShulker;
@@ -22,6 +23,10 @@ public final class EtFuturumCompat {
 
     public static boolean isShulker(EntityLivingBase entity) {
         return entity instanceof EntityShulker;
+    }
+
+    public static boolean isElytraFlying(EntityLivingBase entity) {
+        return entity instanceof IElytraPlayer && ((IElytraPlayer) entity).etfu$isElytraFlying();
     }
 
     public static Item netheriteScrap() {
