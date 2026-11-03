@@ -93,7 +93,9 @@ public class PetGuidebook extends ItemBase implements Vanishable {
                 boolean tamable = this.isTamableAnimal(target);
                 MutableComponent reply = Component.literal(
                     tamable ? "Yep, this animal seems tamable." : "Nope, this animal is not considered tamable.");
-                player.addChatMessage(reply.withStyle(tamable ? EnumChatFormatting.GREEN : EnumChatFormatting.RED));
+                player.addChatMessage(
+                    reply.withStyle(tamable ? EnumChatFormatting.GREEN : EnumChatFormatting.RED)
+                        .asVanillaComponent());
             }
 
             return InteractionResult.SUCCESS;

@@ -182,7 +182,10 @@ public class ItemLoreHelper {
     }
 
     private static NBTTagString loreTag(String string) {
-        return new NBTTagString(net.minecraft.util.IChatComponent.Serializer.func_150696_a(Component.literal(string)));
+        return new NBTTagString(
+            net.minecraft.util.IChatComponent.Serializer.func_150696_a(
+                Component.literal(string)
+                    .asVanillaComponent()));
     }
 
     public static ItemStack addLoreString(ItemStack stack, String string) {
@@ -239,7 +242,11 @@ public class ItemLoreHelper {
 
     public static ItemStack setDisplayName(ItemStack stack, String name) {
         NBTTagCompound display = getDisplayTag(stack);
-        display.setString("Name", net.minecraft.util.IChatComponent.Serializer.func_150696_a(Component.literal(name)));
+        display.setString(
+            "Name",
+            net.minecraft.util.IChatComponent.Serializer.func_150696_a(
+                Component.literal(name)
+                    .asVanillaComponent()));
         stack.getTagCompound()
             .setTag("display", display);
 

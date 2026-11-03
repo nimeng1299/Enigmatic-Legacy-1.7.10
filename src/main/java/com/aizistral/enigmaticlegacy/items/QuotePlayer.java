@@ -77,7 +77,8 @@ public class QuotePlayer extends ItemBase implements IHidden {
                         "Quote: " + Quote.getAllQuotes()
                             .get(itemstack.getItemDamage())
                             .getName()
-                            .toUpperCase()));
+                            .toUpperCase())
+                        .asVanillaComponent());
             }
         } else {
             if (player instanceof EntityPlayerMP splayer) {

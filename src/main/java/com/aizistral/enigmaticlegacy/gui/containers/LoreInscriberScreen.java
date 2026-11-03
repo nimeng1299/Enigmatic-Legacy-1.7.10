@@ -32,6 +32,15 @@ public class LoreInscriberScreen extends GuiContainer {
     private static final int FIELD_TEXT_COLOR = -1;
     private static final int FIELD_MAX_LENGTH = 128;
 
+    /**
+     * Guards Angelica's pack-wide ampersand-to-color conversion, which otherwise makes {@code &a} typed into the field
+     * render as formatted text. See {@link #installAmpersandSuppressor()}.
+     */
+    private static int literalDrawDepth;
+    private static boolean suppressorLookupDone;
+    private static java.lang.reflect.Method suppressorSetter;
+    private static final java.util.function.BooleanSupplier LITERAL_DRAWING = LoreInscriberScreen::isDrawingLiteralText;
+
     private final LoreInscriberContainer container;
     private final EntityPlayer player;
 
@@ -51,6 +60,8 @@ public class LoreInscriberScreen extends GuiContainer {
     public void initGui() {
         super.initGui();
 
+        installAmpersandSuppressor();
+
         this.nameField = new GuiTextField(this.fontRendererObj, this.guiLeft + 55, this.guiTop + 30, 95, 12);
         this.nameField.setCanLoseFocus(false);
         this.nameField.setTextColor(FIELD_TEXT_COLOR);
@@ -67,7 +78,44 @@ public class LoreInscriberScreen extends GuiContainer {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         super.drawScreen(mouseX, mouseY, partialTicks);
-        this.nameField.drawTextBox();
+
+        literalDrawDepth++;
+
+        try {
+            this.nameField.drawTextBox();
+        } finally {
+            literalDrawDepth--;
+        }
+    }
+
+    private static boolean isDrawingLiteralText() {
+        return literalDrawDepth > 0;
+    }
+
+    /**
+     * Angelica converts {@code &} color codes to {@code §} for every rendered string, which would make the codes typed
+     * into the field show up as formatting. Its conversion suppressor is used to keep the field literal; it is optional
+     * and only touched reflectively when Angelica is installed.
+     */
+    private static void installAmpersandSuppressor() {
+        if (!suppressorLookupDone) {
+            suppressorLookupDone = true;
+
+            try {
+                suppressorSetter = Class.forName("com.gtnewhorizons.angelica.client.font.ColorCodeUtils")
+                    .getMethod("setConversionSuppressor", java.util.function.BooleanSupplier.class);
+            } catch (Throwable ignored) {
+                // NO-OP
+            }
+        }
+
+        if (suppressorSetter != null) {
+            try {
+                suppressorSetter.invoke(null, LITERAL_DRAWING);
+            } catch (Throwable ignored) {
+                // NO-OP
+            }
+        }
     }
 
     @Override
@@ -81,7 +129,7 @@ public class LoreInscriberScreen extends GuiContainer {
             this.lastInputStack = input;
             this.syncNameField();
         } else {
-            String text = this.nameField.getText();
+            String text = this.sanitizeFieldText();
 
             if (!text.equals(this.lastFieldText)) {
                 this.lastFieldText = text;
@@ -93,15 +141,18 @@ public class LoreInscriberScreen extends GuiContainer {
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) {
+        // Let the field consume the key first, so keys such as the inventory key are typed as text instead of
+        // closing the screen. Closing is only allowed while the field is disabled (no lore fragment inserted).
+        if (this.getInputStack() != null && this.nameField.textboxKeyTyped(typedChar, keyCode)) {
+            return;
+        }
+
         if (keyCode == Keyboard.KEY_ESCAPE || keyCode == this.mc.gameSettings.keyBindInventory.getKeyCode()) {
-            // Same as the 1.20 screen, the field never consumes the close keys.
             this.player.closeScreen();
             return;
         }
 
-        if (!this.nameField.textboxKeyTyped(typedChar, keyCode)) {
-            super.keyTyped(typedChar, keyCode);
-        }
+        super.keyTyped(typedChar, keyCode);
     }
 
     @Override
@@ -139,10 +190,26 @@ public class LoreInscriberScreen extends GuiContainer {
     private void syncNameField() {
         ItemStack input = this.getInputStack();
 
-        this.nameField.setText(input != null ? LoreInscriberContainer.getPlainDisplayName(input) : "");
+        this.nameField.setText(
+            input != null ? LoreInscriberContainer.toFieldText(LoreInscriberContainer.getPlainDisplayName(input)) : "");
         this.nameField.setEnabled(input != null);
         this.nameField.setFocused(true);
         this.lastFieldText = this.nameField.getText();
+    }
+
+    /**
+     * Keeps the field on the raw {@code &} codes, so formatting characters never get rendered as formatting by the
+     * font renderer.
+     */
+    private String sanitizeFieldText() {
+        String text = this.nameField.getText();
+        String sanitized = LoreInscriberContainer.toFieldText(text);
+
+        if (!sanitized.equals(text)) {
+            this.nameField.setText(sanitized);
+        }
+
+        return sanitized;
     }
 
     private ItemStack getInputStack() {

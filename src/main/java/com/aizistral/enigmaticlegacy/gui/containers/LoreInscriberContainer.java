@@ -303,7 +303,7 @@ public class LoreInscriberContainer extends Container {
             } else {
                 output = null;
             }
-        } else if (!this.unparsedInputField.equals(getPlainDisplayName(input))) {
+        } else if (!this.unparsedInputField.equals(toFieldText(getPlainDisplayName(input)))) {
             this.unleashAnvilParser(output);
         } else {
             output = null;
@@ -349,7 +349,7 @@ public class LoreInscriberContainer extends Container {
 
         String name = stack.getDisplayName();
 
-        if (name.startsWith("{")) {
+        if (name.startsWith("{") || name.startsWith("\"")) {
             try {
                 IChatComponent component = IChatComponent.Serializer.func_150699_a(name);
                 return component.getUnformattedText();
@@ -359,6 +359,14 @@ public class LoreInscriberContainer extends Container {
         }
 
         return name;
+    }
+
+    /**
+     * The GUI field always works with the {@code &} formatting codes the player types. Item names store the parsed
+     * {@code §} codes, which the text field would otherwise render as formatting instead of showing them as text.
+     */
+    public static String toFieldText(String name) {
+        return name.indexOf('\u00a7') >= 0 ? name.replace('\u00a7', '&') : name;
     }
 
 }

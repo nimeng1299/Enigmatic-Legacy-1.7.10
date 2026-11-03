@@ -86,6 +86,11 @@ public class ComponentImpl implements MutableComponent {
     }
 
     @Override
+    public IChatComponent asVanillaComponent() {
+        return this.delegate;
+    }
+
+    @Override
     public MutableComponent copy() {
         return new ComponentImpl(this.delegate.createCopy(), this.contents);
     }

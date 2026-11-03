@@ -38,6 +38,12 @@ public interface Component extends IChatComponent {
 
     Object getContents();
 
+    /**
+     * Vanilla serializers only accept concrete {@code ChatComponentText}/{@code ChatComponentTranslation} instances,
+     * not this wrapper, so unwrap before handing a component to NBT or packet serialization.
+     */
+    IChatComponent asVanillaComponent();
+
     MutableComponent copy();
 
     MutableComponent withStyle(ChatStyle style);
