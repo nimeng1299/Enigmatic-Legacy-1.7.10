@@ -16,3 +16,4 @@ Whatever fate your advent will bring upon this forgotten land.
 * 现在以太矿石会从暮色黑暗高塔的战利品箱子中概率获得
 * 至暗卷轴改为合成获得
 * 湮灭心石暂无获取渠道（这个东西太史了）
+* 禁忌之果在巫妖塔的战利品箱子中获得
