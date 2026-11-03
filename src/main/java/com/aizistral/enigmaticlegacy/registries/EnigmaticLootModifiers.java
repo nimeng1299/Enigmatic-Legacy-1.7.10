@@ -23,6 +23,11 @@ public class EnigmaticLootModifiers {
     private static final String[] PYRAMID_CHESTS = { ChestGenHooks.PYRAMID_DESERT_CHEST,
         ChestGenHooks.PYRAMID_JUNGLE_CHEST };
 
+    // 1.7.10 has no underwater ruins, shipwrecks or buried treasure; these hooks only
+    // yield loot once a structure backport mod populates/reads the same categories.
+    private static final String[] WATER_DUNGEON_CHESTS = { "underwaterRuinBig", "underwaterRuinSmall",
+        "shipwreckTreasure", "buriedTreasure" };
+
     private static final EnigmaticLootModifiers INSTANCE = new EnigmaticLootModifiers();
 
     private EnigmaticLootModifiers() {
@@ -39,6 +44,10 @@ public class EnigmaticLootModifiers {
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.ANGEL_BLESSING)) {
             addToChests(EnigmaticItems.ANGEL_BLESSING, 5, PYRAMID_CHESTS);
+        }
+
+        if (OmniconfigHandler.isItemEnabled(EnigmaticItems.OCEAN_STONE)) {
+            addToChests(EnigmaticItems.OCEAN_STONE, 10, WATER_DUNGEON_CHESTS);
         }
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.EARTH_HEART)) {

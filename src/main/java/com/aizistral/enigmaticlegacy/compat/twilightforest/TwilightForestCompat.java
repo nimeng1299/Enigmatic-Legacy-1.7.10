@@ -34,6 +34,15 @@ public final class TwilightForestCompat {
             TFTreasure.tower_library.rare.add(EnigmaticItems.FORBIDDEN_FRUIT, 1, 10);
             EnigmaticLegacy.LOGGER.info("Injected The Forbidden Fruit into Twilight Forest Lich Tower loot.");
         }
+
+        if (OmniconfigHandler.customDungeonLootEnabled.getValue()
+            && OmniconfigHandler.isItemEnabled(EnigmaticItems.OCEAN_STONE)) {
+            // Aurora room chests roll exactly one rare item (existing total 80), cache chests one
+            // out of an existing total of 11; this yields ~11% and ~8% per chest respectively.
+            TFTreasure.aurora_room.rare.add(EnigmaticItems.OCEAN_STONE, 1, 10);
+            TFTreasure.aurora_cache.rare.add(EnigmaticItems.OCEAN_STONE, 1, 1);
+            EnigmaticLegacy.LOGGER.info("Injected Will of the Ocean into Twilight Forest Aurora Palace loot.");
+        }
     }
 
     public static boolean isTowerGolem(EntityLivingBase entity) {

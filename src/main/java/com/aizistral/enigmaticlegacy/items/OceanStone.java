@@ -14,12 +14,10 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 
-import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.api.generic.SubscribeConfig;
 import com.aizistral.enigmaticlegacy.api.items.ISpellstone;
 import com.aizistral.enigmaticlegacy.compat.Attribute;
 import com.aizistral.enigmaticlegacy.compat.AttributeModifier;
-import com.aizistral.enigmaticlegacy.compat.Attributes;
 import com.aizistral.enigmaticlegacy.compat.DamageTypes;
 import com.aizistral.enigmaticlegacy.compat.MobEffects;
 import com.aizistral.enigmaticlegacy.compat.PotionEffect;
@@ -104,20 +102,6 @@ public class OceanStone extends ItemSpellstoneCurio implements ISpellstone {
     public int getCooldown(EntityPlayer player) {
         if (player != null && reducedCooldowns.test(player)) return 300;
         else return spellstoneCooldown.getValue();
-    }
-
-    private Multimap<Attribute, AttributeModifier> createAttributeMap(EntityPlayer player) {
-        Multimap<Attribute, AttributeModifier> attributesDefault = HashMultimap.create();
-
-        attributesDefault.put(
-            Attributes.MOVEMENT_SPEED,
-            new AttributeModifier(
-                UUID.fromString("79e1cc36-fb4e-4c7d-802b-583b8d90648a"),
-                EnigmaticLegacy.MODID + ":gravity_bonus",
-                player.isInWater() ? -0.5F : 0F,
-                AttributeModifier.Operation.MULTIPLY_TOTAL));
-
-        return attributesDefault;
     }
 
     @SideOnly(Side.CLIENT)
@@ -232,8 +216,6 @@ public class OceanStone extends ItemSpellstoneCurio implements ISpellstone {
     public void onUnequip(SlotContext context, ItemStack newStack, ItemStack stack) {
         if (context.entity() instanceof EntityPlayerMP player) {
             EnigmaticItems.MINING_CHARM.removeNightVisionEffect(player, this.nightVisionDuration);
-            ((net.minecraft.entity.ai.attributes.BaseAttributeMap) player.getAttributeMap())
-                .removeAttributeModifiers((com.google.common.collect.Multimap) this.createAttributeMap(player));
         }
     }
 
@@ -248,9 +230,6 @@ public class OceanStone extends ItemSpellstoneCurio implements ISpellstone {
                 } else {
                     EnigmaticItems.MINING_CHARM.removeNightVisionEffect(player, this.nightVisionDuration);
                 }
-
-                ((net.minecraft.entity.ai.attributes.BaseAttributeMap) player.getAttributeMap())
-                    .applyAttributeModifiers((com.google.common.collect.Multimap) this.createAttributeMap(player));
             }
     }
 
@@ -259,14 +238,7 @@ public class OceanStone extends ItemSpellstoneCurio implements ISpellstone {
         ItemStack stack) {
         Multimap<Attribute, AttributeModifier> atts = HashMultimap.create();
 
-        atts.put(
-            Attributes.MOVEMENT_SPEED,
-            new AttributeModifier(
-                UUID.fromString("13faf191-bf38-4654-b369-cc1f4f1143bf"),
-                "Swim speed bonus",
-                swimminSpeedBoost.getValue()
-                    .asMultiplier(false),
-                AttributeModifier.Operation.MULTIPLY_BASE));
+        // Swim speed attribute does not exist in 1.7.10; applied in OceanStoneHandler instead
 
         return atts;
     }

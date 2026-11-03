@@ -48,6 +48,9 @@ public class ClientProxy extends CommonProxy {
         net.minecraftforge.common.MinecraftForge.EVENT_BUS
             .register(new com.aizistral.enigmaticlegacy.client.gui.EnigmaticHud());
 
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS
+            .register(new com.aizistral.enigmaticlegacy.client.OceanStoneHandler());
+
         cpw.mods.fml.common.FMLCommonHandler.instance()
             .bus()
             .register(com.aizistral.enigmaticlegacy.client.QuoteHandler.INSTANCE);
