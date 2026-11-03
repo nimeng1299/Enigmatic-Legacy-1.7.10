@@ -216,6 +216,7 @@ curios.identifier.ring=Anel
 curios.identifier.charm=Pingente
 curios.modifiers.spellstone=Quando equipado como Pedra de Magia:
 curios.modifiers.scroll=Quando equipado como Pergaminho Arcano:
+curios.modifiers.charm=Quando como amuleto:
 tooltip.enigmaticlegacy.enabled=§6Habilitado
 tooltip.enigmaticlegacy.disabled=§6Desabilitado
 generic.reachDistance=Alcance

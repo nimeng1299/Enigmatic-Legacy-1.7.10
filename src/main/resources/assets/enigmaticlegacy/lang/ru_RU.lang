@@ -212,6 +212,7 @@ curios.identifier.ring=Кольцо
 curios.identifier.charm=Амулет
 curios.modifiers.spellstone=Если экипировано как камень стихий:
 curios.modifiers.scroll=Если экипировано как магический свиток:
+curios.modifiers.charm=Когда надето в качестве амулета:
 tooltip.enigmaticlegacy.enabled=§6Включено
 tooltip.enigmaticlegacy.disabled=§6Отключено
 generic.reachDistance=Досягаемость блоков

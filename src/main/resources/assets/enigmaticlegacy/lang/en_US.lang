@@ -220,6 +220,7 @@ curios.identifier.ring=Ring
 curios.identifier.charm=Charm
 curios.modifiers.spellstone=When equipped as Spellstone:
 curios.modifiers.scroll=When equipped as Arcane Scroll:
+curios.modifiers.charm=When worn as charm:
 tooltip.enigmaticlegacy.enabled=§6Enabled
 tooltip.enigmaticlegacy.disabled=§6Disabled
 generic.reachDistance=Reach Distance

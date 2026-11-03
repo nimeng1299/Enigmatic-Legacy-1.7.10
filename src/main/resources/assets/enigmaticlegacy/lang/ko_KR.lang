@@ -216,6 +216,7 @@ curios.identifier.ring=반지
 curios.identifier.charm=부적
 curios.modifiers.spellstone=주문석을 장착했을 때:
 curios.modifiers.scroll=신비로운 주문서를 장착했을 때:
+curios.modifiers.charm=부적으로 쓸 때:
 tooltip.enigmaticlegacy.enabled=§6활성화
 tooltip.enigmaticlegacy.disabled=§6비활성화
 generic.reachDistance=도달할 수 있는 거리

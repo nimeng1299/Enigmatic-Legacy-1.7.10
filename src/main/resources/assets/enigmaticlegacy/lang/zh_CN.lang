@@ -216,6 +216,7 @@ curios.identifier.ring=戒指
 curios.identifier.charm=饰品
 curios.modifiers.spellstone=当装备在术石栏：
 curios.modifiers.scroll=当装备在奥秘卷轴栏：
+curios.modifiers.charm=佩戴护符时：
 tooltip.enigmaticlegacy.enabled=§6启用
 tooltip.enigmaticlegacy.disabled=§6停用
 generic.reachDistance=触及距离
