@@ -19,7 +19,11 @@ import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
 import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 
-public abstract class ItemSpellstoneCurio extends ItemBaseCurio implements ISpellstone {
+import baubles.api.expanded.IBaubleExpanded;
+
+public abstract class ItemSpellstoneCurio extends ItemBaseCurio implements ISpellstone, IBaubleExpanded {
+
+    public static final String SPELLSTONE_SLOT = "spellstone";
 
     public static Omniconfig.BooleanParameter multiequip;
     public static Predicate<EntityPlayer> reducedCooldowns = SuperpositionHandler::hasArchitectsFavor;
@@ -62,6 +66,16 @@ public abstract class ItemSpellstoneCurio extends ItemBaseCurio implements ISpel
 
     public static Properties getDefaultProperties() {
         return ItemBaseCurio.getDefaultProperties();
+    }
+
+    @Override
+    public String[] getBaubleTypes(ItemStack stack) {
+        return new String[] { SPELLSTONE_SLOT };
+    }
+
+    @Override
+    public String getBaubleSlotType(ItemStack stack) {
+        return SPELLSTONE_SLOT;
     }
 
     @Override

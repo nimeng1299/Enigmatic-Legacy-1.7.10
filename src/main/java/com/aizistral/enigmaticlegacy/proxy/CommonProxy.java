@@ -1,12 +1,14 @@
 package com.aizistral.enigmaticlegacy.proxy;
 
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
+import com.aizistral.enigmaticlegacy.items.generic.ItemSpellstoneCurio;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticBlocks;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticEntities;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticSounds;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticTabs;
 
+import baubles.api.expanded.BaubleExpandedSlots;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -67,6 +69,10 @@ public class CommonProxy {
 
     public void preInit(FMLPreInitializationEvent event) {
         OmniconfigHandler.initialize();
+
+        if (BaubleExpandedSlots.tryRegisterType(ItemSpellstoneCurio.SPELLSTONE_SLOT)) {
+            BaubleExpandedSlots.tryAssignSlotOfType(ItemSpellstoneCurio.SPELLSTONE_SLOT);
+        }
 
         EnigmaticTabs.init();
         EnigmaticSounds.init();

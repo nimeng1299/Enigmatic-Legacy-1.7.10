@@ -40,7 +40,7 @@ public abstract class ItemBaseCurio extends ItemBase implements ICurioItem, IBau
     public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean advanced) {
         super.addInformation(stack, player, list, advanced);
 
-        String slotType = BaubleExpandedSlots.getTypeFromBaubleType(this.getBaubleType(stack));
+        String slotType = this.getBaubleSlotType(stack);
         list.add(
             StatCollector.translateToLocalFormatted(
                 "tooltip.enigmaticlegacy.baubleSlot",
@@ -87,6 +87,10 @@ public abstract class ItemBaseCurio extends ItemBase implements ICurioItem, IBau
     @Override
     public BaubleType getBaubleType(ItemStack stack) {
         return BaubleType.AMULET;
+    }
+
+    public String getBaubleSlotType(ItemStack stack) {
+        return BaubleExpandedSlots.getTypeFromBaubleType(this.getBaubleType(stack));
     }
 
     protected SlotContext slotContext(EntityLivingBase entity) {
