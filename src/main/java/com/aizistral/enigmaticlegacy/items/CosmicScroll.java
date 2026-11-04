@@ -18,6 +18,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 
 import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.api.generic.SubscribeConfig;
@@ -172,6 +173,20 @@ public class CosmicScroll extends ItemScrollCurio implements IHidden {
     public List<Component> getAttributesTooltip(List<Component> tooltips, ItemStack stack) {
         tooltips.clear();
         return tooltips;
+    }
+
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onTooltip(ItemTooltipEvent event) {
+        if (event.itemStack == null || event.itemStack.getItem() != this) return;
+
+        if (event.entityPlayer != null && SuperpositionHandler.isTheBlessedOne(event.entityPlayer)) return;
+
+        List<String> tooltip = event.toolTip;
+
+        for (int i = 0; i < tooltip.size(); i++) {
+            tooltip.set(i, SuperpositionHandler.obscureString(tooltip.get(i)));
+        }
     }
 
     @Override

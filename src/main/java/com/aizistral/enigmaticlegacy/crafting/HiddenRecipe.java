@@ -10,8 +10,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
-import com.aizistral.enigmaticlegacy.helpers.ItemNBTHelper;
-import com.aizistral.enigmaticlegacy.items.CosmicHeart;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
 
 /**
@@ -45,9 +43,6 @@ public class HiddenRecipe implements IRecipe {
     }
 
     private static boolean matchesGrid(InventoryCrafting inv, Map.Entry<ItemStack[], ItemStack> entry) {
-        ItemStack output = entry.getValue();
-        boolean cosmicScroll = output != null && output.getItem() == EnigmaticItems.COSMIC_SCROLL;
-
         for (int i = 0; i < GRID_SIZE; i++) {
             ItemStack slotStack = inv.getStackInSlot(i);
             ItemStack requiredStack = entry.getKey()[i];
@@ -59,9 +54,6 @@ public class HiddenRecipe implements IRecipe {
             }
 
             if (slotStack == null || slotStack.getItem() != requiredStack.getItem()) return false;
-
-            if (cosmicScroll && slotStack.getItem() instanceof CosmicHeart
-                && !ItemNBTHelper.getBoolean(slotStack, "isBelieverBlessed", false)) return false;
         }
 
         return true;
