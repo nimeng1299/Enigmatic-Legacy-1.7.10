@@ -1,6 +1,7 @@
 package com.aizistral.enigmaticlegacy.proxy;
 
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
+import com.aizistral.enigmaticlegacy.items.generic.ItemScrollCurio;
 import com.aizistral.enigmaticlegacy.items.generic.ItemSpellstoneCurio;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticBlocks;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticEntities;
@@ -72,6 +73,10 @@ public class CommonProxy {
 
         if (BaubleExpandedSlots.tryRegisterType(ItemSpellstoneCurio.SPELLSTONE_SLOT)) {
             BaubleExpandedSlots.tryAssignSlotOfType(ItemSpellstoneCurio.SPELLSTONE_SLOT);
+        }
+
+        if (BaubleExpandedSlots.tryRegisterType(ItemScrollCurio.SCROLL_SLOT)) {
+            BaubleExpandedSlots.tryAssignSlotOfType(ItemScrollCurio.SCROLL_SLOT);
         }
 
         EnigmaticTabs.init();

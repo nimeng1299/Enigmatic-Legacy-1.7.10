@@ -20,13 +20,14 @@ import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.items.generic.ItemBaseCurio;
+import com.aizistral.enigmaticlegacy.items.generic.ItemScrollCurio;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
 import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class CursedScroll extends ItemBaseCurio implements ICursed {
+public class CursedScroll extends ItemScrollCurio implements ICursed {
 
     public static Omniconfig.PerhapsParameter damageBoost;
     public static Omniconfig.PerhapsParameter miningBoost;

@@ -5,11 +5,13 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
+import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.api.generic.SubscribeConfig;
 import com.aizistral.enigmaticlegacy.compat.InteractionHand;
 import com.aizistral.enigmaticlegacy.compat.InteractionResult;
@@ -18,6 +20,7 @@ import com.aizistral.enigmaticlegacy.compat.Screen;
 import com.aizistral.enigmaticlegacy.compat.SoundEvents;
 import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
+import com.aizistral.enigmaticlegacy.compat.network.PacketDistributor;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.compat.text.MutableComponent;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
@@ -25,6 +28,8 @@ import com.aizistral.enigmaticlegacy.helpers.ExperienceHelper;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.helpers.ItemNBTHelper;
 import com.aizistral.enigmaticlegacy.items.generic.ItemBaseCurio;
+import com.aizistral.enigmaticlegacy.items.generic.ItemScrollCurio;
+import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncXPScroll;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticSounds;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
@@ -33,7 +38,7 @@ import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class XPScroll extends ItemBaseCurio {
+public class XPScroll extends ItemScrollCurio {
 
     public static Omniconfig.DoubleParameter xpCollectionRange;
 
@@ -161,6 +166,14 @@ public class XPScroll extends ItemBaseCurio {
             }
         }
 
+        if (!world.isRemote) {
+            ItemStack equipped = SuperpositionHandler.getCurioStack(player, EnigmaticItems.XP_SCROLL);
+
+            if (equipped != null) {
+                this.syncToClient(player, equipped);
+            }
+        }
+
         if (swing) {
             player.swingItem();
         }
@@ -182,6 +195,7 @@ public class XPScroll extends ItemBaseCurio {
         EntityPlayer player = (EntityPlayer) context.entity();
         World world = player.worldObj;
         int xpPortion = this.getXPPortion(player);
+        int storedBefore = ItemNBTHelper.getInt(itemstack, "XPStored", 0);
 
         if (ItemNBTHelper.getBoolean(itemstack, "AbsorptionMode", true)) {
             if (ExperienceHelper.getPlayerXP(player) >= xpPortion) {
@@ -204,6 +218,10 @@ public class XPScroll extends ItemBaseCurio {
             }
         }
 
+        if (ItemNBTHelper.getInt(itemstack, "XPStored", 0) != storedBefore) {
+            this.syncToClient(player, itemstack);
+        }
+
         List<net.minecraft.entity.item.EntityXPOrb> orbs = world.getEntitiesWithinAABB(
             net.minecraft.entity.item.EntityXPOrb.class,
             SuperpositionHandler.getBoundingBoxAroundEntity(player, xpCollectionRange.getValue()));
@@ -221,6 +239,17 @@ public class XPScroll extends ItemBaseCurio {
     @Override
     public boolean canEquipFromUse(SlotContext context, ItemStack stack) {
         return false;
+    }
+
+    private void syncToClient(EntityPlayer player, ItemStack stack) {
+        if (!(player instanceof EntityPlayerMP)) return;
+
+        EnigmaticLegacy.packetInstance.send(
+            PacketDistributor.PLAYER.with(() -> (EntityPlayerMP) player),
+            new PacketSyncXPScroll(
+                ItemNBTHelper.getInt(stack, "XPStored", 0),
+                ItemNBTHelper.getBoolean(stack, "IsActive", false),
+                ItemNBTHelper.getBoolean(stack, "AbsorptionMode", true)));
     }
 
     private int getXPPortion(EntityPlayer player) {

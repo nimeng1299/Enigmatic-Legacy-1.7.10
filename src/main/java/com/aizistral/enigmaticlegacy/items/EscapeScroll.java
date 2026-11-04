@@ -13,11 +13,12 @@ import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.items.generic.ItemBaseCurio;
+import com.aizistral.enigmaticlegacy.items.generic.ItemScrollCurio;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class EscapeScroll extends ItemBaseCurio {
+public class EscapeScroll extends ItemScrollCurio {
 
     public EscapeScroll() {
         super(

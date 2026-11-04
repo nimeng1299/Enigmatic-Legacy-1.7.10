@@ -331,6 +331,7 @@ advancement.enigmaticlegacy:fabulousScroll.desc=获得造物主的恩赐
 tooltip.enigmaticlegacy.holdShift=§5按住 §6Shift§5 查看详情。
 tooltip.enigmaticlegacy.baubleSlot=§5可装备于：%1$s
 slot.spellstone=§a术石§7
+slot.scroll=§a奥秘卷轴§7
 tooltip.enigmaticlegacy.enigmaticItem1=§d主动技能：
 tooltip.enigmaticlegacy.enigmaticItem2=§6- 毁灭性的凋灵骷髅头如雨般落下。
 tooltip.enigmaticlegacy.enigmaticItemCooldown=§d冷却：§6%1$s§6秒

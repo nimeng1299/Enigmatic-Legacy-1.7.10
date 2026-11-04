@@ -36,7 +36,7 @@ import com.aizistral.enigmaticlegacy.handlers.DevotedBelieversHandler;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.helpers.ItemNBTHelper;
-import com.aizistral.enigmaticlegacy.items.generic.ItemBaseCurio;
+import com.aizistral.enigmaticlegacy.items.generic.ItemScrollCurio;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketCosmicRevive;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
 import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
@@ -48,7 +48,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class CosmicScroll extends ItemBaseCurio implements IHidden {
+public class CosmicScroll extends ItemScrollCurio implements IHidden {
 
     private static final ResourceLocation ADVANCEMENT = new ResourceLocation(
         EnigmaticLegacy.MODID,

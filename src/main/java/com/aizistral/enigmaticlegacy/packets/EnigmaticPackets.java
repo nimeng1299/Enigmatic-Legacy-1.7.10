@@ -19,6 +19,7 @@ import com.aizistral.enigmaticlegacy.packets.clients.PacketSlotUnlocked;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncCooldown;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncPlayTime;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncTransientData;
+import com.aizistral.enigmaticlegacy.packets.clients.PacketSyncXPScroll;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketUpdateCompass;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketUpdateExperience;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketUpdateNotification;
@@ -231,6 +232,12 @@ public final class EnigmaticPackets {
             PacketXPScrollKey::encode,
             PacketXPScrollKey::decode,
             PacketXPScrollKey::handle);
+        channel.registerMessage(
+            41,
+            PacketSyncXPScroll.class,
+            PacketSyncXPScroll::encode,
+            PacketSyncXPScroll::decode,
+            PacketSyncXPScroll::handle);
     }
 
 }
