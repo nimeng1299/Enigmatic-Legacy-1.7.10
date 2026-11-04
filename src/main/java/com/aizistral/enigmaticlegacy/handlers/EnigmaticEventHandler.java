@@ -718,6 +718,11 @@ public class EnigmaticEventHandler {
             .hasKey("ELTeleportBlock")) {
             event.setCanceled(true);
         }
+
+        if (event.attackDamage > 0 && event.entityLiving instanceof EntityPlayer
+            && SuperpositionHandler.hasCurio(event.entityLiving, EnigmaticItems.EYE_OF_NEBULA)) {
+            event.attackDamage = 0;
+        }
     }
 
     @SubscribeEvent

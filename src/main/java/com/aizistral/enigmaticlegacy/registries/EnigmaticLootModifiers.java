@@ -36,6 +36,13 @@ public class EnigmaticLootModifiers {
     private static final String[] NETHER_DUNGEON_CHESTS = { "ruinedPortal", "bastionTreasure", "bastionOther",
         "bastionBridge", "bastionHoglinStable" };
 
+    private static final String[] STRONGHOLD_CHESTS = { ChestGenHooks.STRONGHOLD_CORRIDOR,
+        ChestGenHooks.STRONGHOLD_CROSSING };
+
+    // End cities do not generate in 1.7.10; loot only appears if a structure backport
+    // populates the matching category.
+    private static final String[] END_CITY_CHESTS = { "endCityTreasure" };
+
     private static final EnigmaticLootModifiers INSTANCE = new EnigmaticLootModifiers();
 
     private EnigmaticLootModifiers() {
@@ -64,6 +71,11 @@ public class EnigmaticLootModifiers {
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.UNHOLY_GRAIL)) {
             addToAll(EnigmaticItems.UNHOLY_GRAIL, 1);
+        }
+
+        if (OmniconfigHandler.isItemEnabled(EnigmaticItems.EYE_OF_NEBULA)) {
+            addToChests(EnigmaticItems.EYE_OF_NEBULA, 5, STRONGHOLD_CHESTS);
+            addToChests(EnigmaticItems.EYE_OF_NEBULA, 10, END_CITY_CHESTS);
         }
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.BLAZING_CORE)) {
