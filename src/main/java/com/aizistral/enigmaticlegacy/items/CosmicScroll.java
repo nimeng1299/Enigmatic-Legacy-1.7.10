@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -18,11 +17,9 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 
 import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.api.generic.SubscribeConfig;
-import com.aizistral.enigmaticlegacy.api.items.IHidden;
 import com.aizistral.enigmaticlegacy.compat.Attribute;
 import com.aizistral.enigmaticlegacy.compat.AttributeModifier;
 import com.aizistral.enigmaticlegacy.compat.Attributes;
@@ -33,7 +30,6 @@ import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
 import com.aizistral.enigmaticlegacy.compat.network.PacketDistributor;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
-import com.aizistral.enigmaticlegacy.handlers.DevotedBelieversHandler;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.helpers.ItemNBTHelper;
@@ -49,7 +45,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class CosmicScroll extends ItemScrollCurio implements IHidden {
+public class CosmicScroll extends ItemScrollCurio {
 
     private static final ResourceLocation ADVANCEMENT = new ResourceLocation(
         EnigmaticLegacy.MODID,
@@ -85,11 +81,6 @@ public class CosmicScroll extends ItemScrollCurio implements IHidden {
     public CosmicScroll() {
         super(getDefaultProperties().rarity(EnumRarity.epic));
         MinecraftForge.EVENT_BUS.register(this);
-    }
-
-    @Override
-    public CreativeTabs getCreativeTab() {
-        return null;
     }
 
     @SideOnly(Side.CLIENT)
@@ -175,20 +166,6 @@ public class CosmicScroll extends ItemScrollCurio implements IHidden {
         return tooltips;
     }
 
-    @SideOnly(Side.CLIENT)
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onTooltip(ItemTooltipEvent event) {
-        if (event.itemStack == null || event.itemStack.getItem() != this) return;
-
-        if (event.entityPlayer != null && SuperpositionHandler.isTheBlessedOne(event.entityPlayer)) return;
-
-        List<String> tooltip = event.toolTip;
-
-        for (int i = 0; i < tooltip.size(); i++) {
-            tooltip.set(i, SuperpositionHandler.obscureString(tooltip.get(i)));
-        }
-    }
-
     @Override
     public Multimap<Attribute, AttributeModifier> getAttributeModifiers(SlotContext slotContext, UUID uuid,
         ItemStack stack) {
@@ -224,7 +201,7 @@ public class CosmicScroll extends ItemScrollCurio implements IHidden {
 
     @Override
     public void onEquip(SlotContext context, ItemStack prevStack, ItemStack stack) {
-        if (context.entity() instanceof EntityPlayerMP player && DevotedBelieversHandler.isDevotedBeliever(player)) {
+        if (context.entity() instanceof EntityPlayerMP player && SuperpositionHandler.isTheBlessedOne(player)) {
             if (!SuperpositionHandler.hasAdvancement(player, ADVANCEMENT)) {
                 SuperpositionHandler.grantAdvancement(player, ADVANCEMENT);
             }

@@ -1138,8 +1138,7 @@ public class SuperpositionHandler {
     }
 
     public static boolean isTheBlessedOne(EntityPlayer player) {
-        if (EnigmaticLegacy.SOUL_OF_THE_ARCHITECT.equals(player.getUniqueID())) return true;
-        else return DevotedBelieversHandler.isDevotedBeliever(player);
+        return true;
     }
 
     public static boolean hasArchitectsFavor(EntityPlayer player) {

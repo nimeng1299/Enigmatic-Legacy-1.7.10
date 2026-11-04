@@ -212,17 +212,23 @@ public class CommonProxy {
         }
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.COSMIC_SCROLL)) {
-            com.aizistral.enigmaticlegacy.crafting.HiddenRecipe.addRecipe(
-                new net.minecraft.item.ItemStack(EnigmaticItems.COSMIC_SCROLL),
-                new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST),
-                new net.minecraft.item.ItemStack(net.minecraft.init.Items.golden_apple, 1, 1),
-                new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST),
-                new net.minecraft.item.ItemStack(EnigmaticItems.ETHERIUM_INGOT),
-                new net.minecraft.item.ItemStack(EnigmaticItems.DARKEST_SCROLL),
-                new net.minecraft.item.ItemStack(EnigmaticItems.ETHERIUM_INGOT),
-                new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST),
-                new net.minecraft.item.ItemStack(EnigmaticItems.COSMIC_HEART),
-                new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST));
+            net.minecraft.item.crafting.CraftingManager.getInstance()
+                .getRecipeList()
+                .add(
+                    new net.minecraft.item.crafting.ShapedRecipes(
+                        3,
+                        3,
+                        new net.minecraft.item.ItemStack[] {
+                            new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST),
+                            new net.minecraft.item.ItemStack(net.minecraft.init.Items.golden_apple, 1, 1),
+                            new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST),
+                            new net.minecraft.item.ItemStack(EnigmaticItems.ETHERIUM_INGOT),
+                            new net.minecraft.item.ItemStack(EnigmaticItems.DARKEST_SCROLL),
+                            new net.minecraft.item.ItemStack(EnigmaticItems.ETHERIUM_INGOT),
+                            new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST),
+                            new net.minecraft.item.ItemStack(EnigmaticItems.COSMIC_HEART),
+                            new net.minecraft.item.ItemStack(EnigmaticItems.ASTRAL_DUST) },
+                        new net.minecraft.item.ItemStack(EnigmaticItems.COSMIC_SCROLL)));
         }
     }
 
