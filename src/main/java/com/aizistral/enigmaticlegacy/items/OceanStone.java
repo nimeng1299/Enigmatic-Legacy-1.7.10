@@ -26,6 +26,7 @@ import com.aizistral.enigmaticlegacy.compat.SoundEvents;
 import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
+import com.aizistral.enigmaticlegacy.handlers.EnigmaticEventHandler;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ExperienceHelper;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
@@ -224,8 +225,10 @@ public class OceanStone extends ItemSpellstoneCurio implements ISpellstone {
         if (context.entity() instanceof EntityPlayerMP player)
             if (SuperpositionHandler.hasCurio(player, EnigmaticItems.OCEAN_STONE)) {
                 if (player.isInWater()) {
+                    EnigmaticEventHandler.isApplyingNightVision = true;
                     player.addPotionEffect(
                         new PotionEffect(MobEffects.NIGHT_VISION, this.nightVisionDuration, 0, true, false));
+                    EnigmaticEventHandler.isApplyingNightVision = false;
                     player.setAir(300);
                 } else {
                     EnigmaticItems.MINING_CHARM.removeNightVisionEffect(player, this.nightVisionDuration);

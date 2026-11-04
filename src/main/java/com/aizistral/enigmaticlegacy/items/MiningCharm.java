@@ -23,6 +23,7 @@ import com.aizistral.enigmaticlegacy.compat.Screen;
 import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
+import com.aizistral.enigmaticlegacy.handlers.EnigmaticEventHandler;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.helpers.ItemNBTHelper;
@@ -129,8 +130,10 @@ public class MiningCharm extends ItemBaseCurio {
                                 (int) Math.floor(player.posZ))
                         /* && player.level.getMaxLocalRawBrightness(player.blockPosition(), 0) <= 8 */) {
 
+                            EnigmaticEventHandler.isApplyingNightVision = true;
                             player.addPotionEffect(
                                 new PotionEffect(MobEffects.NIGHT_VISION, this.nightVisionDuration, 0, true, false));
+                            EnigmaticEventHandler.isApplyingNightVision = false;
                         } else {
                             // this.removeNightVisionEffect(player, this.nightVisionDuration);
                         }
