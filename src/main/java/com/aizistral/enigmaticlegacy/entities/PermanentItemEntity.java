@@ -80,7 +80,8 @@ public class PermanentItemEntity extends Entity implements IEntityAdditionalSpaw
         return copy;
     }
 
-    public void tick() {
+    @Override
+    public void onUpdate() {
         if (this.getItem() == null || this.getItem().stackSize <= 0) {
             this.setDead();
             return;

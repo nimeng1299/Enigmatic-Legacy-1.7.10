@@ -13,6 +13,7 @@ import baubles.api.expanded.BaubleExpandedSlots;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerAboutToStartEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 
 public class CommonProxy {
@@ -256,6 +257,10 @@ public class CommonProxy {
         }
 
         return new net.minecraft.item.ItemStack(net.minecraft.init.Items.gold_ingot);
+    }
+
+    public void serverAboutToStart(FMLServerAboutToStartEvent event) {
+        com.aizistral.enigmaticlegacy.handlers.SoulArchive.initialize(event.getServer());
     }
 
     public void serverStarting(FMLServerStartingEvent event) {
