@@ -1,10 +1,14 @@
 package com.aizistral.enigmaticlegacy.registries;
 
+import java.util.Arrays;
+
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.WeightedRandomChestContent;
+import net.minecraft.world.gen.structure.StructureNetherBridgePieces;
 import net.minecraftforge.common.ChestGenHooks;
 
+import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
 
 /**
@@ -27,6 +31,10 @@ public class EnigmaticLootModifiers {
     // yield loot once a structure backport mod populates/reads the same categories.
     private static final String[] WATER_DUNGEON_CHESTS = { "underwaterRuinBig", "underwaterRuinSmall",
         "shipwreckTreasure", "buriedTreasure" };
+
+    // Ruined portals and bastion remnants do not exist in 1.7.10 either; same caveat applies.
+    private static final String[] NETHER_DUNGEON_CHESTS = { "ruinedPortal", "bastionTreasure", "bastionOther",
+        "bastionBridge", "bastionHoglinStable" };
 
     private static final EnigmaticLootModifiers INSTANCE = new EnigmaticLootModifiers();
 
@@ -56,6 +64,35 @@ public class EnigmaticLootModifiers {
 
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.UNHOLY_GRAIL)) {
             addToAll(EnigmaticItems.UNHOLY_GRAIL, 1);
+        }
+
+        if (OmniconfigHandler.isItemEnabled(EnigmaticItems.BLAZING_CORE)) {
+            addToChests(EnigmaticItems.BLAZING_CORE, 5, NETHER_DUNGEON_CHESTS);
+            injectNetherFortressLoot();
+        }
+    }
+
+    /**
+     * Nether fortress chests use a private static content array instead of ChestGenHooks,
+     * so the only way to add to them on 1.7.10 is to replace that array.
+     */
+    private static void injectNetherFortressLoot() {
+        try {
+            Class<?> pieceClass = StructureNetherBridgePieces.Corridor.class.getSuperclass();
+            WeightedRandomChestContent[] contents = (WeightedRandomChestContent[]) cpw.mods.fml.common.ObfuscationReflectionHelper
+                .getPrivateValue((Class) pieceClass, null, "field_111019_a");
+            WeightedRandomChestContent[] extended = Arrays.copyOf(contents, contents.length + 1);
+            extended[contents.length] = new WeightedRandomChestContent(
+                new ItemStack(EnigmaticItems.BLAZING_CORE),
+                1,
+                1,
+                5);
+
+            cpw.mods.fml.common.ObfuscationReflectionHelper
+                .setPrivateValue((Class) pieceClass, null, extended, "field_111019_a");
+            EnigmaticLegacy.LOGGER.info("Injected Blazing Core into Nether Fortress loot.");
+        } catch (Exception ex) {
+            EnigmaticLegacy.LOGGER.error("Failed to inject Blazing Core into Nether Fortress loot.", ex);
         }
     }
 

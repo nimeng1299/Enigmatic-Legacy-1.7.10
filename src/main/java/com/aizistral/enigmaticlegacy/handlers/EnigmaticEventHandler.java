@@ -115,6 +115,7 @@ import com.aizistral.enigmaticlegacy.items.TheTwist;
 import com.aizistral.enigmaticlegacy.items.VoidPearl;
 import com.aizistral.enigmaticlegacy.items.generic.ItemSpellstoneCurio;
 import com.aizistral.enigmaticlegacy.mixin.MixinEntityPlayer;
+import com.aizistral.enigmaticlegacy.mixin.MixinPotionEffect;
 import com.aizistral.enigmaticlegacy.objects.CooldownMap;
 import com.aizistral.enigmaticlegacy.objects.DimensionalPosition;
 import com.aizistral.enigmaticlegacy.objects.Perhaps;
@@ -599,8 +600,22 @@ public class EnigmaticEventHandler {
             player.setFire(1);
         }
 
-        // 1.7.10: potion effects already tick natively every tick, so Blazing Core
-        // does not need to accelerate them manually here.
+        // Blazing Core makes other status effects tick twice as fast; Molten Heart is
+        // exempt and instead decays at half speed, matching the reference behavior.
+        if (SuperpositionHandler.hasCurio(player, EnigmaticItems.BLAZING_CORE)) {
+            ArrayList<net.minecraft.potion.PotionEffect> activeEffects = new ArrayList<net.minecraft.potion.PotionEffect>(
+                player.getActivePotionEffects());
+
+            for (net.minecraft.potion.PotionEffect effect : activeEffects) {
+                if (effect.getPotionID() == EnigmaticEffects.MOLTEN_HEART.getId()) {
+                    if (player.ticksExisted % 2 == 0 && effect.getDuration() > 0) {
+                        ((MixinPotionEffect) effect).setDuration(effect.getDuration() + 1);
+                    }
+                } else {
+                    effect.onUpdate(player);
+                }
+            }
+        }
 
         if (SuperpositionHandler.hasSpellstoneCooldown(player)) {
             SuperpositionHandler.tickSpellstoneCooldown(player, 1);

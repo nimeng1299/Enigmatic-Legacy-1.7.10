@@ -43,6 +43,16 @@ public final class TwilightForestCompat {
             TFTreasure.aurora_cache.rare.add(EnigmaticItems.OCEAN_STONE, 1, 1);
             EnigmaticLegacy.LOGGER.info("Injected Will of the Ocean into Twilight Forest Aurora Palace loot.");
         }
+
+        if (OmniconfigHandler.customDungeonLootEnabled.getValue()
+            && OmniconfigHandler.isItemEnabled(EnigmaticItems.BLAZING_CORE)) {
+            // Every Labyrinth chest rolls exactly one rare item; weight 5 yields ~14% in room and
+            // dead-end chests, and ~8% in the vault against its larger rare table.
+            TFTreasure.labyrinth_room.rare.add(EnigmaticItems.BLAZING_CORE, 1, 5);
+            TFTreasure.labyrinth_deadend.rare.add(EnigmaticItems.BLAZING_CORE, 1, 5);
+            TFTreasure.labyrinth_vault.rare.add(EnigmaticItems.BLAZING_CORE, 1, 5);
+            EnigmaticLegacy.LOGGER.info("Injected Blazing Core into Twilight Forest Labyrinth loot.");
+        }
     }
 
     public static boolean isTowerGolem(EntityLivingBase entity) {
