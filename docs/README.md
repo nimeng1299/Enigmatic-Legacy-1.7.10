@@ -9,7 +9,6 @@ Whatever fate your advent will bring upon this forgotten land.
 # 七咒之戒
 
 * 击杀砷铅铁傀儡有 20% 概率掉落星尘
-* 灵魂破裂暂未实现（忘记了）
 
 # 来源变动
 
@@ -19,3 +18,7 @@ Whatever fate your advent will bring upon this forgotten land.
 * 禁忌之果也能从巫妖高塔的战利品箱子中获得
 * 海洋意志也能从极光宫殿的战利品箱子中获得
 * 烈焰核心也能从牛头人迷宫的战利品箱子中获得
+
+# 未实现内容
+
+* 创造之心
