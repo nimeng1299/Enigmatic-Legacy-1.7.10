@@ -15,6 +15,7 @@
         "MixinEntityLivingBase",
         "MixinEntityPlayer",
         "MixinEntityPlayerArmor",
+        "MixinEntityVillager",
         "MixinPotionEffect",
         "MixinTileEntityBrewingStand"
     ],
