@@ -187,7 +187,10 @@ public class MiningCharm extends ItemBaseCurio {
         ItemStack stack) {
         Multimap<Attribute, AttributeModifier> atts = HashMultimap.create();
 
-        // Reach attribute does not exist in 1.7.10
+        // 1.7.10 has no reach attribute at all (1.20 uses ForgeMod.BLOCK_REACH), so the
+        // bonus is folded into the two definitions of reach this version has:
+        // MixinPlayerControllerMP for the client aim raycast and MixinItemInWorldManager
+        // for server-side validation. See SuperpositionHandler#getBlockReachBonus.
 
         return atts;
     }

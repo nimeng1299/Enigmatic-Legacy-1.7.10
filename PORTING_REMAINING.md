@@ -2,7 +2,7 @@
 
 > 对照基线：`E:\code\Enigmatic-Legacy-1.20.x`（1.20.1 / Forge）
 > 当前状态：`./gradlew build` 通过；服务端冒烟测试与客户端渲染截图验证通过
-> 最后更新：2026-11-02
+> 最后更新：2026-11-05
 
 图例：**未实现** = 1.7.10 可做但尚未做；**部分实现** = 有简化版或仅保留数据结构；**平台不适用** = 1.7.10 无对应机制，不建议移植。
 
@@ -205,6 +205,8 @@
 9. **勋章的两个布尔开关**：1.20 里 `DoubleXP` / `BonusLooting` 都只是 tooltip 死配置，关掉仍生效；1.7.10 的 `DoubleXP` 本来就真的生效，本次起 `BonusLooting` 也在 `MonsterCharm.getLootingLevel` 里生效，避免 tooltip 说"没有 +1 抢夺"而实际仍有。默认 true 时两版行为一致，设为 false 时 1.7.10 会真的关闭效果（比上游更符合配置语义）。
 10. **charm 槽位与槽位解锁**：1.20 的 charm 槽默认 1 个、可由 Ichor Bottle 永久 +1；1.7.10 用 Baubles 的 AMULET 槽（同样 1 个，数量等价），Baubles-Expanded 虽有内置 `charmType` 但未单独分配槽位。`SuperpositionHandler.unlockSpecialSlot` 为空实现（Baubles 槽位是全局静态分配，无每玩家解锁机制）、`CHARM_SLOT_UUID` 为零引用死字段、`isSlotLocked` 恒 false。属于平台差异，不是勋章专属缺失；若改动需同时迁移 11 个 charm 类物品并考虑旧存档槽位兼容。
 
+11. **猎宝者护符的额外触及距离**：1.20 用 `ForgeMod.BLOCK_REACH` 属性修饰器实现（`MiningCharm.getAttributeModifiers`，配置 `MiningCharm:ReachDistance`，默认 +2.15 格），1.7.10 既没有触及属性、`getAttributeModifiers` 也没有消费者，移植版此前只留了一句注释和空 map。**已解决（双端注入）**：`SuperpositionHandler.getBlockReachBonus` 统一给出加成，`MixinPlayerControllerMP` 注入 `PlayerControllerMP#getBlockReachDistance`（客户端准星射线，`EntityRenderer#getMouseOver` 靠它选取方块），`MixinItemInWorldManager` 注入 `ItemInWorldManager#getBlockReachDistance`（服务端校验：`NetHandlerPlayServer` 用 `reach + 1` 判定挖掘与放置距离，`Item#getMovingObjectPositionFromPlayer` 用它做物品射线）；`compat/ClipContext` 的射线同样计入该加成。注意两点实现约束：`ItemInWorldManager#getBlockReachDistance` 是 Forge 新增方法（无 SRG 映射），注入必须标 `remap = false`，否则注解处理器报 “Unable to locate obfuscation mapping”；读取 `thisPlayerMP` 必须走 `@Accessor`（`MixinItemInWorldManagerAccessor`），本工程的注解处理器不会为 `@Shadow` 公开字段写 refmap，正式环境会找不到字段。
+
 ---
 
 ## 七、已实现但未完整实测
@@ -217,6 +219,7 @@
 - 酿造边界情况（多槽同时酿造、普通/喷溅/滞留转换）。
 - 磁铁戒指、末影戒指、法术石等饰品的实际交互。
 - 怪物猎人勋章四项效果链的端到端游戏内验证（伤害倍率、双倍经验、+1 抢夺与斩首概率）；目前只做了调用链静态核对与启动冒烟。
+- 猎宝者护符的触及距离：已验证双端 mixin 均能正常应用（服务端探针调用 `ItemInWorldManager#getBlockReachDistance` 返回 5.0，客户端 `PlayerControllerMP` 加载无异常），但未做「佩戴护符后实际挖/放到 7 格」的游戏内实测。
 
 ---
 

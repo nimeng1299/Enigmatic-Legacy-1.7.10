@@ -69,6 +69,7 @@ import com.aizistral.enigmaticlegacy.items.CursedRing;
 import com.aizistral.enigmaticlegacy.items.EldritchPan;
 import com.aizistral.enigmaticlegacy.items.GolemHeart;
 import com.aizistral.enigmaticlegacy.items.InfernalShield;
+import com.aizistral.enigmaticlegacy.items.MiningCharm;
 import com.aizistral.enigmaticlegacy.items.MonsterCharm;
 import com.aizistral.enigmaticlegacy.items.TheAcknowledgment;
 import com.aizistral.enigmaticlegacy.items.generic.ItemSpellstoneCurio;
@@ -203,6 +204,25 @@ public class SuperpositionHandler {
         }
 
         return null;
+    }
+
+    /**
+     * Additional block reach granted by the Charm of Treasure Hunter.
+     * <p>
+     * 1.20 expresses this as a {@code ForgeMod.BLOCK_REACH} attribute modifier, 1.7.10 has no
+     * such attribute at all. The value is therefore consumed directly by the two places that
+     * define reach on this version: {@code PlayerControllerMP#getBlockReachDistance} (client
+     * aim raycast) and {@code ItemInWorldManager#getBlockReachDistance} (server-side validation
+     * of digging and placing).
+     *
+     * @return Reach bonus in blocks, 0 if the entity is not a player or wears no charm.
+     */
+    public static float getBlockReachBonus(final EntityLivingBase entity) {
+        if (!(entity instanceof EntityPlayer)) return 0.0F;
+        if (MiningCharm.reachDistanceBonus == null) return 0.0F;
+        if (!SuperpositionHandler.hasCurio(entity, EnigmaticItems.MINING_CHARM)) return 0.0F;
+
+        return (float) MiningCharm.reachDistanceBonus.getValue();
     }
 
     /**

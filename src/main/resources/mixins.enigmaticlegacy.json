@@ -17,10 +17,14 @@
         "MixinEntityPlayerArmor",
         "MixinEntityPlayerKnockback",
         "MixinEntityVillager",
+        "MixinItemInWorldManager",
+        "MixinItemInWorldManagerAccessor",
         "MixinPotionEffect",
         "MixinPotionHelper",
         "MixinTileEntityBrewingStand"
     ],
-    "client": [],
+    "client": [
+        "MixinPlayerControllerMP"
+    ],
     "server": []
 }

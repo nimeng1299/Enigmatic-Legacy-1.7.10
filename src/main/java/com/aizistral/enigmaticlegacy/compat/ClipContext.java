@@ -5,6 +5,8 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
+import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
+
 /**
  * Stand-in for the modern clip context, providing the fluid mode enum and a
  * 1.7.10 ray trace implementation.
@@ -18,7 +20,7 @@ public class ClipContext {
     }
 
     public static MovingObjectPosition rayTrace(World world, EntityPlayer player, Fluid fluidMode) {
-        double reach = 5.0D;
+        double reach = 5.0D + SuperpositionHandler.getBlockReachBonus(player);
         double eyeHeight = player.getEyeHeight();
         Vec3 start = Vec3.createVectorHelper(player.posX, player.posY + eyeHeight, player.posZ);
         Vec3 look = player.getLookVec();
