@@ -215,6 +215,8 @@
 
 15. **行刑者之斧**：1.20 的实现由三部分组成——`LivingDropsEvent` 里的斩首（基础 `BeheadingBase`=10% + 每级抢夺 `BeheadingBonus`=5%、上限 100%，覆盖骷髅/凋灵骷髅/僵尸/苦力怕/末影龙）、`isCorrectToolForDrops` 恒 `false`（不能当采集工具）、tooltip 显示当前斩首概率（含饰品栏抢夺）。1.7.10 侧**斩首本身已实现**（`EnigmaticEventHandler#onLivingDrops`，用 `Items.skull` 的 meta 0/1/2/4 区分骷髅/凋灵骷髅/僵尸/苦力怕；末影龙无龙首，跳过。凋灵骷髅原版本就掉头，`ifDroplistContainsItem` 命中时不重复追加，与 1.20 一致）。**`isCorrectToolForDrops` 已等价**：1.7.10 走 `func_150897_b`/`canHarvestBlock`，本物品的 `effectiveBlocks` 与 `effectiveTags` 都是空集，因此同样采不到任何方块、挖掘速度退化为 1.0，与 1.20 硬编码 `false` 的结果相同（`ForbiddenAxe` 里的一参 `isCorrectToolForDrops(BlockState)` 只是占位，1.7.10 无调用点，已加注释说明）。**补齐的两处差异**：① tooltip 之前只算附魔抢夺等级，而 1.20 还会叠加 Curios 提供的抢夺，且实际掉落用的 `event.lootingLevel` 已经包含这份加成（`MixinEnchantmentHelper` 注入 `getLootingModifier`），导致显示概率低于真实概率——现在 tooltip 同步加上 `SuperpositionHandler.getCurioLootingBonus`；② 1.20 用 `Zombie.class` 精确匹配，僵尸村民（独立类）不掉头，而 1.7.10 的僵尸村民只是 `EntityZombie` 的标志位，现补 `!isVillager()` 排除。**平台不适用**：斩首成就 `enigmaticlegacy:forbidden_axe_beheading`（`BeheadingTrigger` 未移植，`SuperpositionHandler.hasAdvancement/grantAdvancement` 在 1.7.10 均为空实现）。
 
+16. **以太套装**：1.20 的效果是「穿齐四件以太护甲 + 血量 ≤ 阈值（默认 40%，拾遗者卷轴可改）→ 以太护盾」：箭/火球类投射物完全免疫、近战伤害减免（默认 50%）、击退攻击者并播放音效、身上有能量光晕。1.7.10 侧**功能部分全部已实现**——`EtheriumEventHandler` 的 `LivingAttackEvent` 取消 `EntityArrow`/`EntityFireball`（覆盖 1.7.10 全部对应投射物，含 `EntityWitherSkull`、大小火球），`LivingHurtEvent` 做击退与减伤；`EtheriumArmor.hasShield` 的全套判定、`EtheriumConfigHandler` 的 40%/50% 默认值、拾遗者卷轴覆盖阈值（`getShieldThreshold`）均与 1.20 一致。1.20 里「护盾清除负面效果」那段代码在 2.5.0 已被注释掉，无需移植。**补齐**：1.20 的 `ShieldAuraLayer`（护盾激活时用 `models/misc/ultimate_wither_armor.png` 把玩家放大 1.05 倍再渲染一遍，`RenderType.energySwirl` 加法混合 + UV 滚动）在 1.7.10 完全缺失；现新增 `com/aizistral/etherium/client/ShieldAuraLayer`，挂在 `RenderPlayerEvent.Specials.Post` 上（该事件仍在玩家变换内、模型保持本帧姿势），逐个部件渲染而非调用 `ModelBiped#render`（后者会重跑 `setRotationAngles` 把姿势打回默认），用 `GL_TEXTURE` 矩阵平移复刻 UV 滚动，并在 `ClientProxy` 注册。**未做**：游戏内视觉验证。
+
 ---
 
 ## 七、已实现但未完整实测
@@ -232,6 +234,7 @@
 - 精美戒指的 +1 幸运：已验证注入能正常应用（服务端强制加载 `EnchantmentHelper`/`EntityFishHook` 无异常），但未做「戴戒指钓鱼，统计垃圾/宝藏比例」的游戏内实测。
 - 附魔师的珍珠：双次附魔、原版与 Et Futurum 两条附魔台路径均只做了注入应用验证（强制加载两个 `ContainerEnchantment`，`require = 1` 下无注入错误），未在游戏内实际附魔比对结果数量/等级。
 - 行刑者之斧：斩首概率公式与骷髅/凋灵骷髅/僵尸/苦力怕四条分支只做了静态核对；tooltip 新增的饰品抢夺加成、僵尸村民排除均未做游戏内验证。
+- 以太套装：护盾的投射物免疫、近战减伤、击退与音效只做了静态核对；新增的 `ShieldAuraLayer` 光晕渲染未做游戏内视觉验证（1.7.10 用 `RenderPlayerEvent.Specials.Post` + GL 复刻，无法在无头环境确认实际观感）。
 
 ---
 
