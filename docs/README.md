@@ -9,7 +9,6 @@ Whatever fate your advent will bring upon this forgotten land.
 # 七咒之戒
 
 * 击杀砷铅铁傀儡有 20% 概率掉落星尘
-* [bug] 角色死亡后会掉落
 
 # 来源变动
 

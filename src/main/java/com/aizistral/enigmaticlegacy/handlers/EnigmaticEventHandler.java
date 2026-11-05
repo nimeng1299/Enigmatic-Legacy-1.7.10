@@ -1,6 +1,7 @@
 package com.aizistral.enigmaticlegacy.handlers;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,6 +81,9 @@ import com.aizistral.enigmaticlegacy.compat.PlayerCooldowns;
 import com.aizistral.enigmaticlegacy.compat.PotionEffect;
 import com.aizistral.enigmaticlegacy.compat.SoundEvents;
 import com.aizistral.enigmaticlegacy.compat.Tuple;
+import com.aizistral.enigmaticlegacy.compat.curios.ICurio;
+import com.aizistral.enigmaticlegacy.compat.curios.ICurioItem;
+import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
 import com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat;
 import com.aizistral.enigmaticlegacy.compat.nbt.CompoundTag;
 import com.aizistral.enigmaticlegacy.compat.network.PacketDistributor;
@@ -2100,7 +2104,59 @@ public class EnigmaticEventHandler {
     public void onPlayerDrops(PlayerDropsEvent event) {
         if (!(event.entityPlayer instanceof EntityPlayerMP)) return;
 
-        this.handlePlayerDeathLoot((EntityPlayerMP) event.entityPlayer, event.drops);
+        EntityPlayerMP player = (EntityPlayerMP) event.entityPlayer;
+
+        // Has to happen before handlePlayerDeathLoot(), otherwise the dropped ring can be
+        // swallowed by the Extradimensional Storage Crystal of the Enigmatic Amulet.
+        this.preserveDeathPersistentCurios(player, event);
+
+        this.handlePlayerDeathLoot(player, event.drops);
+    }
+
+    /**
+     * Baubles drops every equipped bauble on death, and the Curios drop rules this mod mirrors are
+     * not honored by it. Curios that report {@link ICurio.DropRule#ALWAYS_KEEP} - Ring of the Seven
+     * Curses and Ring of Desolation - are bound to their bearer's soul and must stay equipped
+     * through death, no matter what captures the rest of the loot. Their drops are therefore pulled
+     * out of the event and equipped again right away, which also keeps the client-side bauble
+     * inventory in sync since the packet is still sent for the player's current entity id.
+     */
+    private void preserveDeathPersistentCurios(EntityPlayerMP player, PlayerDropsEvent event) {
+        Iterator<EntityItem> iterator = event.drops.iterator();
+
+        while (iterator.hasNext()) {
+            EntityItem drop = iterator.next();
+            ItemStack stack = drop.getEntityItem();
+
+            if (stack == null || stack.stackSize <= 0 || !(stack.getItem() instanceof ICurioItem curio)) {
+                continue;
+            }
+
+            // The slot a dropped bauble came from is not exposed by Baubles, and neither of the
+            // death-persistent rings consults the slot context, so a neutral one is used here.
+            ICurio.DropRule dropRule = curio.getDropRule(
+                new SlotContext(player, "curio", 0),
+                event.source,
+                event.lootingLevel,
+                event.recentlyHit,
+                stack);
+
+            if (dropRule != ICurio.DropRule.ALWAYS_KEEP) {
+                continue;
+            }
+
+            if (SuperpositionHandler.tryForceEquip(player, stack)) {
+                iterator.remove();
+            } else {
+                // No suitable free slot left; let the drop proceed instead of losing the item.
+                EnigmaticLegacy.LOGGER.warn(
+                    "Could not re-equip soulbound curio " + stack.getDisplayName()
+                        + " for "
+                        + player.getGameProfile()
+                            .getName()
+                        + ", it will drop normally");
+            }
+        }
     }
 
     private void dropXPOrb(World level, double x, double y, double z, int xp) {
