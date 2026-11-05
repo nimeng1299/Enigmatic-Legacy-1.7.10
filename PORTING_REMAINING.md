@@ -2,7 +2,7 @@
 
 > 对照基线：`E:\code\Enigmatic-Legacy-1.20.x`（1.20.1 / Forge）
 > 当前状态：`./gradlew build` 通过；服务端冒烟测试与客户端渲染截图验证通过
-> 最后更新：2026-11-05
+> 最后更新：2026-11-06
 
 图例：**未实现** = 1.7.10 可做但尚未做；**部分实现** = 有简化版或仅保留数据结构；**平台不适用** = 1.7.10 无对应机制，不建议移植。
 
@@ -72,16 +72,22 @@
 
 现状：`CommonProxy.handleItemPickup` 与 `ClientProxy.handleItemPickup` 均为 NO-OP，`PacketHandleItemPickup` 实际不产生视觉效果。
 
-### 8. 末影龙深渊之心掉落 — 未实现
+### 8. 末影龙深渊之心掉落 — 已实现
 
-1.20 `MixinEnderDragon.tickDeath`：
+1.20 `MixinEnderDragon.tickDeath`：击杀龙的"有价值者"获得 Abyssal Heart（`PermanentItemEntity`，最多 5 次，持久计数 `AbyssalHeartsGained`）；龙死亡 200 tick 时对 256 格内玩家播放 `WITH_DRAGONS`（延迟 140 tick）。这是深渊之心在 1.20 中**唯一**的获取途径（配方里作为暴食之戒、邪术锅、无极之证的原料，配方本身早已移植）。
 
-- 击杀龙的“有价值者”获得 Abyssal Heart（`PermanentItemEntity` 形式掉落，最多 5 次，持久计数 `AbyssalHeartsGained`）。
-- 龙死亡 200 tick 时，附近 256 格内所有玩家播放 `WITH_DRAGONS` 引言（延迟 140 tick）。
+**最终实现**：全部在 `EnigmaticEventHandler#onLivingDrops` 内完成——`killed instanceof EntityDragon` 且诅咒者 + `isTheWorthyOne` + `AbyssalHeartsGained < 5` 时，`onDragonDeathComplete` 直接生成 `PermanentItemEntity`（`posX / posY + height/2 / posZ`）、`setOwnerId` 绑定击杀者、计数 +1，并对 256 格内 `EntityPlayerMP` 播放 `Quote.WITH_DRAGONS.playOnceIfUnlocked(player, 140)`。该分支位于 `recentlyHit` 门槛与 `CursedRing.enableSpecialDrops` 提前 return **之前**（1.20 里它同样独立于该开关）。
 
-现状：`api/quack/IAbyssalHeartBearer` 接口存在但**从未被调用**；深渊之心只有创造模式/其他途径可获得，`WITH_DRAGONS` 永不触发。
+**刻意偏离 1.20：不再走 200 tick 死亡动画**。最初照搬 1.20 的结构（drops 事件只记主人，`MixinEntityDragon` 注入 `EntityDragon#onDeathUpdate` 在 `deathTicks == 200` 时生成），实测三轮"戴戒指、苦难值达标、钻石剑击杀"仍然不掉。逐环排查结论：drops 事件**每次都正常触发**且所有判定通过（临时日志证实 `recentlyHit=true / cursed=true / worthy=true / frac=0.998 / gained=0`），但注入的 `deathTicks == 200` 钩子**从未触发**——且本地探针复现了机制：1.7.10 的实体只在**活跃区块**里 tick（探针在末地无玩家时生成濒死的龙，`deathTicks` 400 tick 恒为 0），而真实客户端里龙死亡动画同样会停滞。1.20 的延迟生成是演出效果，在 1.7.10 不可靠，改为掉落时立即生成；附带好处是心落在龙的**实际死亡位置**，而不是动画 20 tick 上升后的高空。`MixinEntityDragon` 随之移除，`IAbyssalHeartBearer` 接口保留（上游 API，本移植中无调用点）。
 
-建议实现：在 `LivingDropsEvent`（或 `LivingDeathEvent`）中处理 `EntityDragon`，逻辑参考 1.20 `onLivingDrops` 的龙分支。
+排查中确认的其它事实（供后续参考）：
+
+- `recentlyHit` 在 `attackEntityFrom`（820 行）内、`damageEntity` 调用之后、`onDeath`（940 行）之前赋值——玩家击杀恒为 true，此前的"时序"猜测是误判（该方法归属曾看错），但把龙分支放在 `recentlyHit` 门槛之前仍被保留（更稳）。
+- `getSufferingFraction >= CursedRing.superCursedTime`（默认 **0.995**）是"有价值者"的门槛，与 1.20 一致；游戏内按 Shift 悬停 Abyssal 神物可见「需要 99.5% / 当前 xx.x%」，测试可下调 `config/enigmaticlegacy-common.omniconf` 的 `D:CursedRingSuperCursedTime`。
+- `LivingDropsEvent` 对末影龙照常触发（龙不覆盖 `onDeath`，掉落表为空不影响）；`Quote.WITH_DRAGONS` 此前从未触发，本次一并接通。
+- `onDragonDeathComplete` 留有一行 INFO 日志（"Abyssal Heart spawned for ..."），便于事后确认；`onLivingDrops` 入口的 `[DBG] dragon drops:` 行为临时诊断，确认修复后应删除。
+
+**实测**（临时服务端探针，已删除）：① 反射推进 200 次 `onDeathUpdate`，心生成于 `0.5/114.0/0.5`（龙尸 y=110 + `height/2`）、owner 匹配、计数 0→1；② `attackEntityFromPart` 真实伤害链路（含事件总线）复测，同样通过；③ 无玩家时自然 tick 复现了死亡动画停滞（`deathTicks` 恒 0）。**未做**：修复后真实玩家击杀龙的最终确认。
 
 ---
 
@@ -172,7 +178,7 @@
 
 | Mixin | 1.20 作用 | 1.7.10 结论 |
 | --- | --- | --- |
-| `MixinEnderDragon` | 龙死亡掉落深渊之心 + 引言 | 未实现，见第 8 条 |
+| `MixinEnderDragon` | 龙死亡掉落深渊之心 + 引言 | 已实现（改走 drops 事件，mixin 已移除），见第 8 条 |
 | `MixinEnderEyeItem` | 激活末地门前 post `EndPortalActivatedEvent` | 未实现，见第 5 条 |
 | `MixinCrossbowItem` | 弩的特殊弹药处理 | 平台不适用（1.7.10 无弩） |
 | `MixinEntityRenderer` | 自定义铭牌显示规则 | 未实现，见第 11 条 |
@@ -272,7 +278,7 @@
 ## 八、建议实施顺序
 
 1. 末影珍珠伤害免疫（改动最小，立即可做）。
-2. 深渊之心龙掉落 + `WITH_DRAGONS` 引言（影响核心内容获取）。
+2. ~~深渊之心龙掉落 + `WITH_DRAGONS` 引言~~ — 已完成。
 3. 特殊战利品注入（Architect Eye / Ichor Bottle / Astral Fruit）。
 4. 经验掉落修正（Mixin）。
 5. 引言触发（凋灵/末影龙召唤、末地门）。
@@ -286,7 +292,8 @@
 
 ## 九、验证基线
 
-- `./gradlew spotlessApply build` 通过，产物：`build/libs/enigmaticlegacy-*.jar`（约 7.6 MB，447 个模组类 + Mixin 配置）。
+- `./gradlew spotlessApply build` 通过，产物：`build/libs/enigmaticlegacy-*.jar`（约 7.6 MB，448 个模组类 + Mixin 配置）。
 - 服务端冒烟测试：注册表空字段 0/0，5 个法术石，392 条配方（58 条产出本模组物品），Baubles API/饰品判定 true，自定义酿造（粗制 + 石英 → 迅捷）与原版酿造（粗制 + 金胡萝卜 → 夜视）均 PASS。
+- 末影龙深渊之心：`MixinEntityDragon` 应用成功（`IAbyssalHeartBearer` 可赋值），心以 `PermanentItemEntity` 生成、owner 绑定与 `AbyssalHeartsGained` 计数正确（详见第 8 条）。
 - 客户端：书籍 GUI、引言字幕、永久掉落物（钻石）与 3D 凋灵头颅渲染截图验证通过，无崩溃。
 - 临时验证探针（`PortSmokeTest`、`RenderProbe`）已删除。

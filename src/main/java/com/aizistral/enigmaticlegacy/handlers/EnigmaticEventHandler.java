@@ -1958,13 +1958,53 @@ public class EnigmaticEventHandler {
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public void onLivingDrops(LivingDropsEvent event) {
+        if (event.entityLiving instanceof net.minecraft.entity.boss.EntityDragon) {
+            EntityPlayer dbg = event.source.getEntity() instanceof EntityPlayer
+                ? (EntityPlayer) event.source.getEntity()
+                : null;
+            com.aizistral.enigmaticlegacy.EnigmaticLegacy.LOGGER.info(
+                "[DBG] dragon drops: recentlyHit=" + event.recentlyHit
+                    + " srcType="
+                    + event.source.getDamageType()
+                    + " srcEntity="
+                    + event.source.getEntity()
+                    + " cursed="
+                    + (dbg != null && SuperpositionHandler.isTheCursedOne(dbg))
+                    + " worthy="
+                    + (dbg != null && SuperpositionHandler.isTheWorthyOne(dbg))
+                    + " frac="
+                    + (dbg != null ? SuperpositionHandler.getSufferingFraction(dbg) : -1)
+                    + " gained="
+                    + (dbg != null ? SuperpositionHandler.getPersistentInteger(dbg, "AbyssalHeartsGained", 0) : -1));
+        }
+
         if (event instanceof PlayerDropsEvent) return;
         if (event.entityLiving instanceof EntityPlayer) return;
-        if (!event.recentlyHit) return;
         if (!(event.source.getEntity() instanceof EntityPlayer)) return;
 
         EntityPlayer player = (EntityPlayer) event.source.getEntity();
         EntityLivingBase killed = event.entityLiving;
+
+        // Abyssal Heart is granted to the Worthy One by the Ender Dragon itself.
+        // This sits above the recentlyHit guard on purpose. In 1.7.10 EntityLivingBase assigns
+        // recentlyHit at line ~886 of attackEntityFrom, *after* damageEntity() has already called
+        // onDeath() (~940) and thereby fired this event - so on a killing blow that is the first
+        // player hit in 100 ticks (a one-shot, or a long gap between bow shots) event.recentlyHit
+        // is still false. 1.20 has no such gap: lastHurtByPlayerTime is set in hurt() before
+        // die()/dropAllDeathLoot, so isRecentlyHit() is always true for a player kill. Dropping
+        // the guard here keeps the drop reachable and matches that behaviour.
+        // It is also independent of CursedRing.enableSpecialDrops, as it is in 1.20.
+        if (killed instanceof EntityDragon && SuperpositionHandler.isTheCursedOne(player)
+            && SuperpositionHandler.isTheWorthyOne(player)) {
+            int heartsGained = SuperpositionHandler.getPersistentInteger(player, "AbyssalHeartsGained", 0);
+
+            if (heartsGained < 5) { // Only as many as there are unique items from them, +1
+                this.onDragonDeathComplete((EntityDragon) killed, player, heartsGained);
+            }
+        }
+
+        if (!event.recentlyHit) return;
+
         ItemStack weapon = player.getHeldItem();
 
         // Beheading handler for Axe of Executioner.
@@ -2047,6 +2087,54 @@ public class EnigmaticEventHandler {
             this.addDropWithChance(event, new ItemStack(EnigmaticItems.ASTRAL_DUST, 1), 20);
         } else if (killed.getClass() == EntitySilverfish.class) {
             // NO-OP
+        }
+    }
+
+    /**
+     * Spawns the Abyssal Heart for the Worthy One who killed the Ender Dragon, and plays the
+     * {@code WITH_DRAGONS} quote for everyone who witnessed it. Mirrors the tail of 1.20
+     * {@code MixinEnderDragon#onTickDeath} at {@code dragonDeathTime == 200}.
+     *
+     * <p>
+     * Deliberate deviation from 1.20: the heart is spawned right here instead of 200 ticks into
+     * the dragon's death animation. That animation only advances while the dragon's chunk is being
+     * ticked, and in real play it was observed to stall (the injected {@code deathTicks == 200}
+     * hook never fired), which left the Worthy One with no heart at all. The drops event, on the
+     * other hand, has proven to fire reliably. Spawning here also places the heart at the dragon's
+     * actual death position instead of ~20 blocks above it.
+     */
+    private void onDragonDeathComplete(EntityDragon dragon, EntityPlayer owner, int heartsGained) {
+        World world = dragon.worldObj;
+
+        PermanentItemEntity heart = new PermanentItemEntity(
+            world,
+            dragon.posX,
+            dragon.posY + dragon.height / 2.0D,
+            dragon.posZ,
+            new ItemStack(EnigmaticItems.ABYSSAL_HEART, 1));
+        heart.setOwnerId(owner.getUniqueID());
+        world.spawnEntityInWorld(heart);
+
+        SuperpositionHandler.setPersistentInteger(owner, "AbyssalHeartsGained", heartsGained + 1);
+
+        EnigmaticLegacy.LOGGER.info(
+            "Abyssal Heart spawned for " + owner.getGameProfile()
+                .getName()
+                + " at "
+                + heart.posX
+                + "/"
+                + heart.posY
+                + "/"
+                + heart.posZ
+                + " (hearts gained: "
+                + (heartsGained + 1)
+                + "/5)");
+
+        List<EntityPlayerMP> witnesses = world
+            .getEntitiesWithinAABB(EntityPlayerMP.class, SuperpositionHandler.getBoundingBoxAroundEntity(dragon, 256));
+
+        for (EntityPlayerMP player : witnesses) {
+            Quote.WITH_DRAGONS.playOnceIfUnlocked(player, 140);
         }
     }
 
