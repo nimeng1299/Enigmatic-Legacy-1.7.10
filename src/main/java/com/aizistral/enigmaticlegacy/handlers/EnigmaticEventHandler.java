@@ -9,6 +9,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
+import net.minecraft.block.material.Material;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
@@ -49,6 +50,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
 import net.minecraft.util.Vec3;
@@ -2106,11 +2108,120 @@ public class EnigmaticEventHandler {
 
         EntityPlayerMP player = (EntityPlayerMP) event.entityPlayer;
 
+        // Has to run before preserveDeathPersistentCurios(), otherwise the soulbound ring the
+        // ritual is supposed to melt would simply be equipped back below.
+        this.handleCursedStoneRitual(player, event);
+
         // Has to happen before handlePlayerDeathLoot(), otherwise the dropped ring can be
         // swallowed by the Extradimensional Storage Crystal of the Enigmatic Amulet.
         this.preserveDeathPersistentCurios(player, event);
 
         this.handlePlayerDeathLoot(player, event.drops);
+    }
+
+    /**
+     * The desecration ritual of the Cursed Stone: dying with the stone in the inventory, submerged
+     * in a large enough lava lake of the Nether, permanently destroys the Ring of the Seven Curses
+     * and the Ring of Desolation at the cost of a single soul crystal. 1.20 implements this in
+     * {@code DropRulesEvent} with {@code DropRule.DESTROY} overrides; 1.7.10 has no such event, so
+     * the ritual is performed on {@link PlayerDropsEvent} instead, where the ring stacks can still
+     * be pulled out of the loot and out of the bauble slots.
+     */
+    /**
+     * Minimum amount of source lava blocks the ritual requires within a 7x7x4 volume around the
+     * death spot - roughly a solid 5x5x4 block of lava, i.e. a lake rather than a puddle.
+     */
+    private static final int LAVA_LAKE_MIN_VOLUME = 100;
+
+    private void handleCursedStoneRitual(EntityPlayerMP player, PlayerDropsEvent event) {
+        if (!this.hadUnholyStone(player)) return;
+        if (player.worldObj == null || player.worldObj.provider.dimensionId != -1) return;
+
+        World world = player.worldObj;
+        int x = MathHelper.floor_double(player.posX);
+        int z = MathHelper.floor_double(player.posZ);
+        int y = MathHelper.floor_double(player.posY);
+
+        if (!this.isLavaSource(world, x, y, z)) return;
+        if (!this.isWithinLavaLake(world, x, y, z)) return;
+
+        Iterator<EntityItem> iterator = event.drops.iterator();
+
+        while (iterator.hasNext()) {
+            EntityItem drop = iterator.next();
+            ItemStack stack = drop.getEntityItem();
+
+            if (stack != null && (stack.getItem() == EnigmaticItems.CURSED_RING
+                || stack.getItem() == EnigmaticItems.DESOLATION_RING)) {
+                iterator.remove();
+            }
+        }
+
+        SuperpositionHandler.destroyCurio(player, EnigmaticItems.CURSED_RING);
+        SuperpositionHandler.destroyCurio(player, EnigmaticItems.DESOLATION_RING);
+
+        EnigmaticItems.SOUL_CRYSTAL.setLostCrystals(player, EnigmaticItems.SOUL_CRYSTAL.getLostCrystals(player) + 1);
+
+        world.playSoundEffect(
+            player.posX,
+            player.posY + player.height / 2,
+            player.posZ,
+            SoundEvents.WITHER_DEATH.getName(),
+            1.0F,
+            0.5F);
+        SuperpositionHandler.setPersistentBoolean(player, "DestroyedCursedRing", true);
+    }
+
+    /**
+     * 1.7.10 equivalent of {@code FluidState#isSource()} restricted to lava: only still lava with
+     * level 0 counts, so flowing lava can never complete the ritual.
+     */
+    private boolean isLavaSource(World world, int x, int y, int z) {
+        if (y < 0 || y > 255) return false;
+
+        return world.getBlock(x, y, z)
+            .getMaterial() == Material.lava && world.getBlockMetadata(x, y, z) == 0;
+    }
+
+    /**
+     * Decides whether the player died inside an actual lava lake of the Nether, as opposed to a
+     * one-block puddle in a fortress corridor.
+     * <p>
+     * 1.20 requires a 7x7 square where the surface layer and the three layers below it are lava
+     * without a single exception. In practice that only accepts the very middle of a lake: on a
+     * real lava sea the player usually dies a few blocks from the shore, and a single netherrack
+     * bump on the sea floor is enough to reject the whole ritual. This port therefore keeps the
+     * same shape of the check but measures the body of lava instead of demanding a perfect cube -
+     * the column the player died in has to be at least four blocks deep, and the 7x7x4 volume
+     * around it has to contain {@link #LAVA_LAKE_MIN_VOLUME} source lava blocks, which is about a
+     * solid 5x5x4 block of lava. A bucket-dug puddle cannot reach that.
+     */
+    private boolean isWithinLavaLake(World world, int x, int y, int z) {
+        // Walk up to the topmost lava block of the column the player died in.
+        int surfaceY = y;
+
+        while (this.isLavaSource(world, x, surfaceY + 1, z)) {
+            surfaceY++;
+        }
+
+        // The player has to actually sink into the lava, not just stand on its surface.
+        for (int depth = 0; depth < 4; depth++) {
+            if (!this.isLavaSource(world, x, surfaceY - depth, z)) return false;
+        }
+
+        int volume = 0;
+
+        for (int layer = -3; layer <= 0; layer++) {
+            for (int dx = -3; dx <= 3; dx++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    if (this.isLavaSource(world, x + dx, surfaceY + layer, z + dz)) {
+                        volume++;
+                    }
+                }
+            }
+        }
+
+        return volume >= LAVA_LAKE_MIN_VOLUME;
     }
 
     /**

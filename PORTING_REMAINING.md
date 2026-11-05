@@ -240,6 +240,14 @@
 
 **平台差异（行为一致，无需处理）**：1.7.10 的 `EntityTameable` 只覆盖狼/豹猫，1.20 的 `TamableAnimal` 覆盖狼/猫/鹦鹉——1.7.10 没有鹦鹉；马在两边都不属于该体系（1.7.10 `EntityHorse` / 1.20 `AbstractHorse` 走 `OwnableEntity`），所以两边都不会转移马匹伤害。物品本身除 tooltip、`stacksTo(1)`、`RARE` 稀有度外没有其它逻辑（`Vanishable` 是 1.20 的标记接口，1.7.10 无对应机制）。
 
+20. **邪恶之石（Cursed Stone / 亵渎仪式）**：tooltip 写着「带石头去下界、在足够大的熔岩湖里自尽，七咒之戒与一枚灵魂水晶一并永久摧毁」。移植前这套效果**整体缺失**——`EnigmaticEventHandler` 里 `hadUnholyStone()`、`SuperpositionHandler.destroyCurio()` 都只是被搬过来的死方法，没有任何调用点；死亡时把石头从背包抹掉的逻辑、`DestroyedCursedRing` 标记、重生时的 `Quote.RING_DESTRUCTION` 台词倒是都在，于是只有「石头会消失」这一半生效，仪式本身不会发生。
+
+    1.20 把仪式实现在 `onCurioDrops(DropRulesEvent)`（`DropRule.DESTROY` 覆盖 + `destroyCurio`），1.7.10 没有该事件，改在 `PlayerDropsEvent`（`onPlayerDrops`）里最先执行 `handleCursedStoneRitual`：条件为 `hadUnholyStone` + 维度 `dimensionId == -1` + 脚下是**源**熔岩 + `isWithinLavaLake`（从死亡点向上走到岩浆柱顶层，然后要求该层与下面三层 7×7 全是源熔岩，上面两层只能是空气或熔岩——与原版 `isThereLava`/`confirmLavaPool` 的判定完全同构，用来排除要塞走廊里的单格岩浆）。成立后：把 `CURSED_RING`/`DESOLATION_RING` 的掉落物从 `event.drops` 中摘除、清空饰品槽、`setLostCrystals(+1)`、播放 `mob.wither.death`（音量 1.0 / 音高 0.5）、置 `DestroyedCursedRing`。**顺序关键**：必须在 `preserveDeathPersistentCurios` 之前跑，否则 `ALWAYS_KEEP` 的灵魂绑定戒指会被原样装回去，仪式等于没做。
+
+    **判定放宽（偏离 1.20，有意的）**：1.20 的 `confirmLavaPool` 要求「水面层 + 下面三层」的 7×7 方块**全部**是源岩浆，一块都不许例外。实测表明这条在实际熔岩海里几乎不可能满足：两次真实死亡点（`-74,31,52` 与 `-71,31,54`）都只差一点——前者最底层 y=28 有 6 格海底凸起（43/49），后者贴着一条斜向岸线（水面 40/49、下面几层 38~39/49）。原版之所以过不去，是因为它要求玩家正好站在湖心。现改为按「岩浆体量」判定：**死亡点所在岩浆柱向下至少 4 格是源岩浆**，且 **7×7×4（水面往下四层）范围内源岩浆数量 ≥ `LAVA_LAKE_MIN_VOLUME`（100，约等于 5×5×4 的实心岩浆）**。这样既接受岸边/海底略有不平的真实熔岩海，也不会被一桶岩浆挖的坑通过。
+
+    **实测**（服务端探针，反射调用判定方法；世界数据取自用户存档副本）：真实死亡点 `-74,31,52` → `true`、`-71,31,54` → `true`；合成用例 `3×3×4`（36 格）→ `false`、`7×7×2`（98 格）→ `false`、`1×1×8`（8 格）→ `false`、`5×5×4`（100 格）→ `true`。更早一轮的人工 15×15×5 熔岩湖 → `true`，上方 7×7 内封顶一块石头 → `false`（该条随判定改写已不再检查「上方必须空旷」，见上段）。效果链另行验证（FakePlayer + 反射直调 `handleCursedStoneRitual`）：戴七咒之戒时调用后 `hasCurio=false`、失落灵魂水晶 `0→1`、`DestroyedCursedRing=true`。**未做**：改判定后的真实玩家全流程实测（下一次进游戏复测）。
+
 ---
 
 ## 七、已实现但未完整实测
