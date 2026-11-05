@@ -8,6 +8,7 @@
     "mixins": [
         "MixinBrewingStandIngredientSlot",
         "MixinBrewingStandPotionSlot",
+        "MixinChestGenHooks",
         "MixinContainerEnchantment",
         "MixinEnchantmentHelper",
         "MixinEntityCreature",
@@ -21,7 +22,8 @@
         "MixinItemInWorldManagerAccessor",
         "MixinPotionEffect",
         "MixinPotionHelper",
-        "MixinTileEntityBrewingStand"
+        "MixinTileEntityBrewingStand",
+        "MixinWeightedRandomChestContent"
     ],
     "client": [
         "MixinPlayerControllerMP"
