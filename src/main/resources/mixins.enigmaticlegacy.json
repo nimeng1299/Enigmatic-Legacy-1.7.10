@@ -18,6 +18,7 @@
         "MixinEntityPlayerKnockback",
         "MixinEntityVillager",
         "MixinPotionEffect",
+        "MixinPotionHelper",
         "MixinTileEntityBrewingStand"
     ],
     "client": [],

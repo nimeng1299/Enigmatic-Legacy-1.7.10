@@ -11,6 +11,7 @@ import net.minecraft.potion.Potion;
 
 import com.aizistral.enigmaticlegacy.brewing.ComplexBrewingRecipe;
 import com.aizistral.enigmaticlegacy.compat.Ingredient;
+import com.aizistral.enigmaticlegacy.compat.MobEffects;
 import com.aizistral.enigmaticlegacy.compat.PotionEffect;
 import com.aizistral.enigmaticlegacy.compat.Potions;
 import com.aizistral.enigmaticlegacy.compat.brewing.BrewingRecipeRegistry;
@@ -30,13 +31,17 @@ public class PotionHelper {
     public static int getColor(ItemStack stack) {
 
         if (PotionHelper.isAdvancedPotion(stack)) {
-            List<PotionEffect> effects = PotionHelper.getEffects(stack);
+            List<net.minecraft.potion.PotionEffect> effects = new ArrayList<>();
 
-            if (!effects.isEmpty()) {
-                Potion potion = Potion.potionTypes[effects.get(0)
-                    .getPotionID()];
-                if (potion != null) return potion.getLiquidColor();
+            for (PotionEffect effect : PotionHelper.getEffects(stack)) {
+                effects.add(
+                    new net.minecraft.potion.PotionEffect(
+                        effect.getPotionID(),
+                        effect.getDuration(),
+                        effect.getAmplifier()));
             }
+
+            return net.minecraft.potion.PotionHelper.calcPotionLiquidColor(effects);
         }
 
         return 0x385DC6;
@@ -109,6 +114,10 @@ public class PotionHelper {
 
     public static ItemStack createVanillaPotion(Item item, Potion potion) {
         return new ItemStack(item, 1, Potions.damageFor(potion, 0));
+    }
+
+    public static ItemStack createVanillaPotion(Item item, int damage) {
+        return new ItemStack(item, 1, damage);
     }
 
     public static ItemStack createLongPotion(Item item, Potion potion) {
@@ -283,6 +292,35 @@ public class PotionHelper {
                     Ingredient.of(Items.glass_bottle)),
                 PotionHelper
                     .createAdvancedPotion(EnigmaticItems.COMMON_POTION_LINGERING, EnigmaticPotions.LONG_MOLTEN_HEART)));
+    }
+
+    /**
+     * 1.7.10 never had leaping, resistance or slow falling potion items, so the
+     * 1.20.x ultimate recipes that depend on them would be unobtainable. These
+     * bases use the damage values which {@code MixinPotionHelper} teaches the
+     * vanilla potion decoder about.
+     */
+    public static void registerLegacyBasePotions() {
+        BrewingRecipeRegistry.addRecipe(
+            new ComplexBrewingRecipe(
+                PotionHelper.constructIngredientMap(
+                    Ingredient.of(PotionHelper.createVanillaPotion(Items.potionitem, Potions.AWKWARD)),
+                    Ingredient.of(Items.slime_ball)),
+                new ItemStack(Items.potionitem, 1, Potions.damageFor(MobEffects.JUMP, 0))));
+
+        BrewingRecipeRegistry.addRecipe(
+            new ComplexBrewingRecipe(
+                PotionHelper.constructIngredientMap(
+                    Ingredient.of(PotionHelper.createVanillaPotion(Items.potionitem, Potions.AWKWARD)),
+                    Ingredient.of(Items.iron_ingot)),
+                new ItemStack(Items.potionitem, 1, Potions.damageFor(MobEffects.RESISTANCE, 0))));
+
+        BrewingRecipeRegistry.addRecipe(
+            new ComplexBrewingRecipe(
+                PotionHelper.constructIngredientMap(
+                    Ingredient.of(PotionHelper.createVanillaPotion(Items.potionitem, Potions.AWKWARD)),
+                    Ingredient.of(Items.feather)),
+                new ItemStack(Items.potionitem, 1, Potions.damageFor(MobEffects.SLOW_FALLING, 0))));
     }
 
     public static void registerBasicUltimatePotions() {

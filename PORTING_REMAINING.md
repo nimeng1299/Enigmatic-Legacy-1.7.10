@@ -192,7 +192,7 @@
 
 ## 六、平台差异导致的功能降级
 
-1. **药水效果缺失**：1.7.10 缺少部分药水物品变体（缓慢下降、抗性提升、跳跃提升、失明等）。`compat/Potions.damageFor` 对无法映射的效果返回 `-1`，相关酿造配方存在但产物无效。`MobEffects.SLOW_FALLING` 被近似映射为缓慢（`Potion.moveSlowdown`）。
+1. **药水效果缺失**：**已解决**。1.7.10 原本缺少跳跃提升、抗性提升、缓慢下降的药水物品；`MixinPotionHelper` 为三者注册了空闲的元数据位模式，`PotionHelper.registerLegacyBasePotions()` 提供可酿造的基础药水（史莱姆球/铁锭/羽毛），终极药水配方随之可用。缓慢下降改为自定义 `SlowFallingEffect`（下坠限速并免疫摔落伤害），不再近似为缓慢；滞留药水使用 `EnigmaticAreaEffectCloud` 持续施加区域效果。
 2. **无考古系统**：Earth Heart 无法通过可疑方块获得，`CustomLoot.EarthHeartChance` 配置保留但无效；地牢宝箱途径已通过 `EnigmaticLootModifiers.register()` 用 `ChestGenHooks` 实现（`DUNGEON_CHEST`、`MINESHAFT_CORRIDOR`、`STRONGHOLD_CORRIDOR`/`CROSSING`、沙漠/丛林神庙宝箱，权重 7）。
 3. **无进度 / 配方书**：对应触发器与配方解锁逻辑均不适用。
 4. **依赖替代**：Patchouli → 自绘 `AcknowledgmentBookScreen`；Curios → Baubles-Expanded；JEI → 未接入 NEI。

@@ -151,6 +151,7 @@ public class CommonProxy {
             com.aizistral.enigmaticlegacy.helpers.PotionHelper.registerBasicUltimatePotions();
             com.aizistral.enigmaticlegacy.helpers.PotionHelper.registerSplashUltimatePotions();
             com.aizistral.enigmaticlegacy.helpers.PotionHelper.registerLingeringUltimatePotions();
+            com.aizistral.enigmaticlegacy.helpers.PotionHelper.registerLegacyBasePotions();
         }
 
         com.aizistral.enigmaticlegacy.compat.brewing.BrewingRecipeRegistry.addRecipe(

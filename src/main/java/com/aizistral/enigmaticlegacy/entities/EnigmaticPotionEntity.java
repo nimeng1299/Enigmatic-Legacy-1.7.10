@@ -90,7 +90,7 @@ public class EnigmaticPotionEntity extends EntityThrowable {
 
             if (list != null && !list.isEmpty()) {
                 if (this.isLingering()) {
-                    this.makeAreaOfEffectCloud(itemstack, list);
+                    this.makeAreaOfEffectCloud(itemstack);
                 } else {
                     this.triggerSplash(
                         list,
@@ -155,49 +155,23 @@ public class EnigmaticPotionEntity extends EntityThrowable {
         }
     }
 
-    private void makeAreaOfEffectCloud(ItemStack stack, List<com.aizistral.enigmaticlegacy.compat.PotionEffect> list) {
-        int color = PotionHelper.getColor(stack);
+    private void makeAreaOfEffectCloud(ItemStack stack) {
+        EnigmaticAreaEffectCloud cloud = new EnigmaticAreaEffectCloud(this.worldObj, this.posX, this.posY, this.posZ);
+        cloud.setPotion(stack);
+        cloud.setColor(PotionHelper.getColor(stack));
+        cloud.setRadius(3.0F);
+        cloud.setWaitTime(10);
+        cloud.setDuration(600);
+        cloud.setRadiusPerTick(-cloud.getRadius() / cloud.getDuration());
 
-        this.worldObj.playAuxSFX(
-            2002,
-            (int) Math.floor(this.posX),
-            (int) Math.floor(this.posY),
-            (int) Math.floor(this.posZ),
-            color);
-
-        AxisAlignedBB axisalignedbb = this.boundingBox.expand(6.0D, 3.0D, 6.0D);
-        List<EntityLivingBase> entities = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, axisalignedbb);
-        Entity owner = this.getThrower();
-
-        for (EntityLivingBase livingentity : entities) {
-            double d0 = this.getDistanceSqToEntity(livingentity);
-            if (d0 < 36.0D) {
-                double d1 = 1.0D - Math.sqrt(d0) / 6.0D;
-
-                for (com.aizistral.enigmaticlegacy.compat.PotionEffect effectinstance : list) {
-                    Potion effect = effectinstance.getEffect();
-
-                    if (effect.isInstant()) {
-                        effect.performEffect(livingentity, effectinstance.getAmplifier());
-                    } else {
-                        int i = (int) (d1 * effectinstance.getDuration() / 4 + 0.5D);
-                        if (i > 20) {
-                            livingentity.addPotionEffect(
-                                new PotionEffect(
-                                    effect.id,
-                                    i,
-                                    effectinstance.getAmplifier(),
-                                    effectinstance.getIsAmbient()));
-                        }
-                    }
-                }
-            }
-        }
+        this.worldObj.spawnEntityInWorld(cloud);
     }
 
     private boolean isLingering() {
-        return this.getItem()
-            .getItem() == EnigmaticItems.ULTIMATE_POTION_LINGERING;
+        net.minecraft.item.Item item = this.getItem()
+            .getItem();
+
+        return item == EnigmaticItems.ULTIMATE_POTION_LINGERING || item == EnigmaticItems.COMMON_POTION_LINGERING;
     }
 
     @Override

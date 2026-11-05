@@ -5,15 +5,18 @@ import java.util.List;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 
+import com.aizistral.enigmaticlegacy.registries.EnigmaticEffects;
+
 /**
  * Modern Potions constants mapped onto 1.7.10 potion objects. AWKWARD and
- * MUNDANE have no 1.7.10 counterpart and are represented by placeholder types
- * used exclusively as brewing inputs.
+ * MUNDANE have no 1.7.10 counterpart, so they are represented as raw item
+ * damage values instead of fake potion types (which would steal ids from real
+ * mod effects).
  */
 public final class Potions {
 
-    public static final Potion AWKWARD = marker(28);
-    public static final Potion MUNDANE = marker(29);
+    public static final int AWKWARD = 16;
+    public static final int MUNDANE = 64;
 
     public static final Potion LONG_FIRE_RESISTANCE = Potion.fireResistance;
     public static final Potion LONG_INVISIBILITY = Potion.invisibility;
@@ -22,7 +25,7 @@ public final class Potions {
     public static final Potion LONG_POISON = Potion.poison;
     public static final Potion LONG_REGENERATION = Potion.regeneration;
     public static final Potion LONG_SLOWNESS = Potion.moveSlowdown;
-    public static final Potion LONG_SLOW_FALLING = Potion.moveSlowdown;
+    public static final Potion LONG_SLOW_FALLING = EnigmaticEffects.SLOW_FALLING;
     public static final Potion LONG_STRENGTH = Potion.damageBoost;
     public static final Potion LONG_SWIFTNESS = Potion.moveSpeed;
     public static final Potion LONG_TURTLE_MASTER = Potion.resistance;
@@ -51,9 +54,6 @@ public final class Potions {
      * table. Returns -1 for potions that no 1.7.10 item can represent.
      */
     public static int damageFor(Potion potion, int extraBits) {
-        if (potion == AWKWARD) return 16;
-        if (potion == MUNDANE) return 64;
-
         int index = indexOf(potion);
         return index < 0 ? -1 : index | 8192 | extraBits;
     }
@@ -71,14 +71,6 @@ public final class Potions {
         }
 
         return -1;
-    }
-
-    private static Potion marker(int id) {
-        if (Potion.potionTypes[id] != null) return Potion.potionTypes[id];
-
-        return new Potion(id, false, 0x385DC6) {
-            // Marker type used for brewing inputs only.
-        };
     }
 
 }

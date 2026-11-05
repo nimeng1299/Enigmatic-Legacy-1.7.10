@@ -2,6 +2,8 @@ package com.aizistral.enigmaticlegacy.compat;
 
 import net.minecraft.potion.Potion;
 
+import com.aizistral.enigmaticlegacy.registries.EnigmaticEffects;
+
 /**
  * Modern names for vanilla potion effects.
  */
@@ -40,7 +42,7 @@ public final class MobEffects {
     public static final Potion JUMP = Potion.jump;
     public static final Potion HEAL = Potion.heal;
     public static final Potion HARM = Potion.harm;
-    public static final Potion SLOW_FALLING = Potion.moveSlowdown;
+    public static final Potion SLOW_FALLING = EnigmaticEffects.SLOW_FALLING;
 
     private MobEffects() {
         // NO-OP

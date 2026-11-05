@@ -7,6 +7,7 @@ import com.aizistral.enigmaticlegacy.effects.BlazingStrengthEffect;
 import com.aizistral.enigmaticlegacy.effects.GrowingBloodlustEffect;
 import com.aizistral.enigmaticlegacy.effects.GrowingHungerEffect;
 import com.aizistral.enigmaticlegacy.effects.MoltenHeartEffect;
+import com.aizistral.enigmaticlegacy.effects.SlowFallingEffect;
 
 public class EnigmaticEffects extends AbstractRegistry<Potion> {
 
@@ -22,6 +23,9 @@ public class EnigmaticEffects extends AbstractRegistry<Potion> {
     @ObjectHolder(value = MODID + ":growing_bloodlust", registryName = "mob_effect")
     public static GrowingBloodlustEffect GROWING_BLOODLUST = null;
 
+    @ObjectHolder(value = MODID + ":slow_falling", registryName = "mob_effect")
+    public static SlowFallingEffect SLOW_FALLING = null;
+
     public static void init() {
         // Forces static initialization.
     }
@@ -32,6 +36,7 @@ public class EnigmaticEffects extends AbstractRegistry<Potion> {
         this.register("molten_heart", MoltenHeartEffect::new);
         this.register("growing_hunger", GrowingHungerEffect::new);
         this.register("growing_bloodlust", GrowingBloodlustEffect::new);
+        this.register("slow_falling", SlowFallingEffect::new);
     }
 
     private static final EnigmaticEffects INSTANCE = new EnigmaticEffects();

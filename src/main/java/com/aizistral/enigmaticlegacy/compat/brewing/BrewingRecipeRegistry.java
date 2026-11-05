@@ -17,7 +17,8 @@ public class BrewingRecipeRegistry {
         if (input == null || ingredient == null) return null;
 
         for (IBrewingRecipe recipe : RECIPES) {
-            if (recipe.isInput(input) && recipe.isIngredient(ingredient)) return recipe;
+            if (recipe.isInput(input) && recipe.isIngredient(ingredient) && recipe.getOutput(input, ingredient) != null)
+                return recipe;
         }
 
         return null;

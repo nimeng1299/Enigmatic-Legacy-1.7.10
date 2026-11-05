@@ -54,7 +54,8 @@ public class MixinTileEntityBrewingStand {
                 cir.setReturnValue(Boolean.TRUE);
             }
         } else if (index >= 0 && index <= 2) {
-            if (com.aizistral.enigmaticlegacy.helpers.PotionHelper.isAdvancedPotion(stack)) {
+            if (com.aizistral.enigmaticlegacy.helpers.PotionHelper.isAdvancedPotion(stack)
+                || BrewingRecipeRegistry.isInput(stack)) {
                 cir.setReturnValue(Boolean.TRUE);
             }
         }

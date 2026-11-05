@@ -366,6 +366,12 @@ public abstract class ItemBase extends Item implements ICreativeTabMember {
         return EnigmaticTabs.MAIN;
     }
 
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void getSubItems(Item item, CreativeTabs tab, List<ItemStack> list) {
+        list.addAll(this.getCreativeTabStacks());
+    }
+
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------

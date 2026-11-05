@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.aizistral.enigmaticlegacy.compat.brewing.BrewingRecipeRegistry;
 import com.aizistral.enigmaticlegacy.helpers.PotionHelper;
 
 /**
@@ -18,7 +19,7 @@ public class MixinBrewingStandPotionSlot {
 
     @Inject(method = "isItemValid", at = @At("HEAD"), cancellable = true)
     private void enigmaticlegacy$allowAdvancedPotions(ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
-        if (stack != null && PotionHelper.isAdvancedPotion(stack)) {
+        if (stack != null && (PotionHelper.isAdvancedPotion(stack) || BrewingRecipeRegistry.isInput(stack))) {
             cir.setReturnValue(true);
         }
     }

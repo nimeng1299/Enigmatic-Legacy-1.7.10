@@ -1,6 +1,7 @@
 package com.aizistral.enigmaticlegacy.registries;
 
 import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
+import com.aizistral.enigmaticlegacy.entities.EnigmaticAreaEffectCloud;
 import com.aizistral.enigmaticlegacy.entities.EnigmaticPotionEntity;
 import com.aizistral.enigmaticlegacy.entities.PermanentItemEntity;
 import com.aizistral.enigmaticlegacy.entities.UltimateWitherSkullEntity;
@@ -38,6 +39,14 @@ public class EnigmaticEntities {
             EnigmaticLegacy.instance,
             64,
             1,
+            true);
+        EntityRegistry.registerModEntity(
+            EnigmaticAreaEffectCloud.class,
+            "enigmatic_area_effect_cloud",
+            3,
+            EnigmaticLegacy.instance,
+            64,
+            5,
             true);
     }
 
