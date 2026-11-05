@@ -23,6 +23,7 @@ item.enigmaticlegacy.loot_generator.name=단 하나의 상자
 item.enigmaticlegacy.thicc_scroll.name=빈 주문서
 item.enigmaticlegacy.iron_ring.name=철 반지
 tooltip.enigmaticlegacy.ironRingArmor=§9+1 방어력
+tooltip.enigmaticlegacy.goldenRingLuck=§9+1 행운
 item.enigmaticlegacy.haste_potion_default.name=성급함의 물약 §4[미사용]
 item.enigmaticlegacy.haste_potion_extended.name=성급함의 물약 §4[미사용]
 item.enigmaticlegacy.haste_potion_empowered.name=성급함의 물약 §4[미사용]

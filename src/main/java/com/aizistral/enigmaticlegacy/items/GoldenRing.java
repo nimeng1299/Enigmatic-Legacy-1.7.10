@@ -42,6 +42,8 @@ public class GoldenRing extends ItemBaseCurio {
 
     @SideOnly(Side.CLIENT)
     public void appendHoverText(ItemStack stack, World world, List<Component> list, TooltipFlag flag) {
+        // 1.20 gets this line for free from Curios' automatic attribute tooltip.
+        ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.goldenRingLuck");
         ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.void");
 
         if (Screen.hasShiftDown()) {

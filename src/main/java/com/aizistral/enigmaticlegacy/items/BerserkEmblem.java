@@ -6,6 +6,7 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
@@ -73,6 +74,9 @@ public class BerserkEmblem extends ItemBaseCurio implements ICursed {
 
         float missingHealthPool = SuperpositionHandler.getMissingHealthPool(player);
 
+        // The ATTACK_SPEED modifier is kept for parity with 1.20, but nothing on 1.7.10 reads
+        // that attribute - the actual attack speed effect is applied to the victim's hurt
+        // resistance instead, see shortenHurtResistance below.
         attributesDefault.put(
             Attributes.ATTACK_SPEED,
             new AttributeModifier(
@@ -166,6 +170,36 @@ public class BerserkEmblem extends ItemBaseCurio implements ICursed {
             com.aizistral.enigmaticlegacy.compat.AttributeMap.of(player)
                 .addTransientAttributeModifiers(this.createAttributeMap(player));
         }
+    }
+
+    /**
+     * Translates the attack speed bonus into something 1.7.10 actually simulates.
+     * <p>
+     * 1.20 grants it as an {@code ATTACK_SPEED} attribute modifier, which shortens the attack
+     * cooldown. 1.7.10 has no such cooldown - the only thing limiting how often the same target
+     * can be hit is {@code EntityLivingBase#hurtResistantTime}, which has to drop to half of
+     * {@code maxHurtResistantTime} before a fresh hit lands. Scaling that window down by the
+     * same percentage yields the same hits-per-second, and is the only observable meaning
+     * "attack speed" can have on this version.
+     * <p>
+     * Called from {@code EnigmaticEventHandler#onEntityHurt}: despite its name, 1.7.10 fires
+     * {@code LivingHurtEvent} from {@code EntityLivingBase#damageEntity}, i.e. after the window
+     * has been (re)armed, so the value written here survives the hit.
+     */
+    public static void shortenHurtResistance(EntityPlayer player, EntityLivingBase victim) {
+        if (attackSpeed == null) return;
+
+        float bonus = SuperpositionHandler.getMissingHealthPool(player) * (float) attackSpeed.getValue();
+
+        if (bonus <= 0.0F) return;
+
+        double half = victim.maxHurtResistantTime / 2.0D;
+        long adjusted = Math.round(half + half / (1.0D + bonus));
+        int shortened = (int) Math.max(1L, Math.min(victim.maxHurtResistantTime, adjusted));
+
+        // Never *prolong* the window: hits that only deal partial damage during the cooldown
+        // do not re-arm it, and their event still reaches this method.
+        victim.hurtResistantTime = Math.min(victim.hurtResistantTime, shortened);
     }
 
     @Override

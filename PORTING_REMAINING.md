@@ -199,13 +199,17 @@
 3. **无进度 / 配方书**：对应触发器与配方解锁逻辑均不适用。
 4. **依赖替代**：Patchouli → 自绘 `AcknowledgmentBookScreen`；Curios → Baubles-Expanded；JEI → 未接入 NEI。
 5. **龙首 / 部分生物掉落**：1.7.10 无龙首、潜影贝、猪灵等，相关掉落分支已跳过。
-6. **饰品属性自动应用**：1.20 由 Curios 在装备/卸下时自动调用 `ICurioItem#getAttributeModifiers` 并同步到玩家属性表；Baubles 无此机制，移植版中这些 `getAttributeModifiers` 实现原本全部是死代码。**已解决（仅限护甲）**：`MixinEntityPlayerArmor` 通过 `compat/curios/CuriosApi.getEquippedArmorBonus(...)` 实时读取饰品栏中的 `Attributes.ARMOR` 加法修饰器并折算进 `getTotalArmorValue()`，铁指环的 +1 护甲因此生效（双端一致，无需登录/重生时重新同步）；满钻甲时也能生效，总值上限 24 是 1.7.10 `25 - armor` 伤害公式的安全上限。**仍缺失**：其它饰品的 `LUCK` / `ATTACK_DAMAGE` / `ARMOR_TOUGHNESS` 等修饰器没有消费者（1.7.10 也无对应属性系统），如需要应另建通用的双端属性同步桥，注意不要与自行管理属性的物品（Golem Heart、Enigmatic Amulet 等）重复计数。
+6. **饰品属性自动应用**：1.20 由 Curios 在装备/卸下时自动调用 `ICurioItem#getAttributeModifiers` 并同步到玩家属性表；Baubles 无此机制，移植版中这些 `getAttributeModifiers` 实现原本全部是死代码。**已解决（护甲 + 幸运）**：`MixinEntityPlayerArmor` 通过 `compat/curios/CuriosApi.getEquippedArmorBonus(...)` 实时读取饰品栏中的 `Attributes.ARMOR` 加法修饰器并折算进 `getTotalArmorValue()`，铁指环的 +1 护甲因此生效（双端一致，无需登录/重生时重新同步）；满钻甲时也能生效，总值上限 24 是 1.7.10 `25 - armor` 伤害公式的安全上限。`Attributes.LUCK` 同理由 `CuriosApi.getEquippedLuckBonus(...)` 读取并接入钓鱼（见第 13 条）。**仍缺失**：其它饰品的 `ATTACK_DAMAGE` / `ARMOR_TOUGHNESS` 等修饰器没有消费者（1.7.10 也无对应属性系统），如需要应另建通用的双端属性同步桥，注意不要与自行管理属性的物品（Golem Heart、Enigmatic Amulet 等）重复计数。
 7. **属性 tooltip**：1.20 由 Curios 自动显示「+1 Armor」；1.7.10 已在 `IronRing.appendHoverText` 中显式补上本地化行（`tooltip.enigmaticlegacy.ironRingArmor`，五种语言）。其它饰品的属性提示仍未补。
 8. **怪物猎人勋章的作用范围**：已静态核对，四项效果链全部闭合（伤害加成 `EnigmaticEventHandler.onEntityHurt` → EVENT_BUS；双倍经验 `MixinEntityLivingBase` → `SuperpositionHandler.applyExperienceBonuses`；+1 抢夺 `MixinEnchantmentHelper` → `getCurioLootingBonus` → `MonsterCharm.getLootingLevel`，且 `LivingDropsEvent.lootingLevel` 与原版同源，斩首概率随之受益）。但 1.7.10 用 `IMob` 判定受害者/死者，1.20 用 `Monster`（伤害分支另加 EnderDragon、并有 `isAggressive()` / `canChangeDimensions()` 门槛），因此 1.7.10 对恶魂、史莱姆、岩浆怪、末影龙也提供 +10% 伤害与双倍经验（恶魂在伤害分支被显式排除，经验分支没有）。**未改动**：收紧会削弱现有行为并同时影响七咒之戒的怪物伤害减益分支。若要严格对齐，把 `EnigmaticEventHandler.java:1288` 与 `SuperpositionHandler.java:253` 的判定收紧为 `EntityMob`。
 9. **勋章的两个布尔开关**：1.20 里 `DoubleXP` / `BonusLooting` 都只是 tooltip 死配置，关掉仍生效；1.7.10 的 `DoubleXP` 本来就真的生效，本次起 `BonusLooting` 也在 `MonsterCharm.getLootingLevel` 里生效，避免 tooltip 说"没有 +1 抢夺"而实际仍有。默认 true 时两版行为一致，设为 false 时 1.7.10 会真的关闭效果（比上游更符合配置语义）。
 10. **charm 槽位与槽位解锁**：1.20 的 charm 槽默认 1 个、可由 Ichor Bottle 永久 +1；1.7.10 用 Baubles 的 AMULET 槽（同样 1 个，数量等价），Baubles-Expanded 虽有内置 `charmType` 但未单独分配槽位。`SuperpositionHandler.unlockSpecialSlot` 为空实现（Baubles 槽位是全局静态分配，无每玩家解锁机制）、`CHARM_SLOT_UUID` 为零引用死字段、`isSlotLocked` 恒 false。属于平台差异，不是勋章专属缺失；若改动需同时迁移 11 个 charm 类物品并考虑旧存档槽位兼容。
 
 11. **猎宝者护符的额外触及距离**：1.20 用 `ForgeMod.BLOCK_REACH` 属性修饰器实现（`MiningCharm.getAttributeModifiers`，配置 `MiningCharm:ReachDistance`，默认 +2.15 格），1.7.10 既没有触及属性、`getAttributeModifiers` 也没有消费者，移植版此前只留了一句注释和空 map。**已解决（双端注入）**：`SuperpositionHandler.getBlockReachBonus` 统一给出加成，`MixinPlayerControllerMP` 注入 `PlayerControllerMP#getBlockReachDistance`（客户端准星射线，`EntityRenderer#getMouseOver` 靠它选取方块），`MixinItemInWorldManager` 注入 `ItemInWorldManager#getBlockReachDistance`（服务端校验：`NetHandlerPlayServer` 用 `reach + 1` 判定挖掘与放置距离，`Item#getMovingObjectPositionFromPlayer` 用它做物品射线）；`compat/ClipContext` 的射线同样计入该加成。注意两点实现约束：`ItemInWorldManager#getBlockReachDistance` 是 Forge 新增方法（无 SRG 映射），注入必须标 `remap = false`，否则注解处理器报 “Unable to locate obfuscation mapping”；读取 `thisPlayerMP` 必须走 `@Accessor`（`MixinItemInWorldManagerAccessor`），本工程的注解处理器不会为 `@Shadow` 公开字段写 refmap，正式环境会找不到字段。
+
+12. **血战沙场之证的攻击速度**：1.20 的 `BerserkEmblem` 把「每损失 1% 生命 +1% 攻击速度」写成 `ATTACK_SPEED` 属性修饰器（`curioTick` 里以 transient modifier 施加），而 1.7.10 没有攻击冷却，也没有任何代码读取该属性——移植版此前照搬了属性却没接消费者，等于这一条效果不存在（配置与 tooltip 都在，实际无效）。**已解决**：改为作用在受击后的无敌帧上，`BerserkEmblem.shortenHurtResistance` 在玩家近战命中（`DamageTypes.PLAYER_ATTACK`，与原版冷却只对近战生效一致）时按同一百分比缩短目标的 `hurtResistantTime`：新值 = `max/2 + (max/2)/(1+加成)`，即把「下一次满额命中前的等待」从 `max/2` 缩短为 `(max/2)/(1+加成)`，每秒命中数与 1.20 的等价。实现依赖一个容易踩错的事实：1.7.10 的 `LivingHurtEvent` 是在 `EntityLivingBase#damageEntity` 里触发的，即 `hurtResistantTime` 已经被重新武装**之后**，所以在事件里写该字段不会被覆盖；同时用 `min(当前值, 新值)` 确保只缩短、不延长（处于冷却中的追加伤害不会重新武装无敌帧，其事件同样会走到这里）。`ATTACK_SPEED` 属性修饰器仍按 1.20 保留，但注释已标明它是占位、不产生效果。
+
+13. **精美戒指的幸运与猪灵效果**：1.20 的 `GoldenRing` 有三条实现——`Attributes.LUCK +1`（由 Curios 自动显示为「+1 Luck」属性行）、`makesPiglinsNeutral`、`isPiglinCurrency`。1.7.10 侧：**幸运已实现**，`CuriosApi.getEquippedLuckBonus(player)` 汇总饰品栏里 `Attributes.LUCK` 的加法修饰器，`MixinEnchantmentHelper` 注入 `EnchantmentHelper#func_151386_g`（钓鱼的「海之眷顾」等级，全代码库只有一个调用方 `EntityFishHook`）把幸运折进钓鱼幸运等级：垃圾概率 `0.1 - 0.025×luck`、宝藏概率 `0.05 + 0.01×luck`，方向与 1.20 的幸运（压低垃圾、推高宝藏）一致；tooltip 另补 `tooltip.enigmaticlegacy.goldenRingLuck`（五语言），因为 1.20 那行是 Curios 自动生成的。同一条链路顺带让 `CosmicScroll`、`TheCube` 的 LUCK 修饰器一并生效。**平台不适用**：1.7.10 无猪灵、无反交易，`makesPiglinsNeutral` / `isPiglinCurrency` 无处可施；僵尸猪人本就是中立生物（只有被攻击才激怒），「戴上后保持中立」在原版行为下已经成立，故未额外改动（改成「攻击猪人也不激怒」会超出 1.20 的语义）。**仍不可做**：1.20 的幸运还作用于战利品表的 `quality` 权重，而 1.7.10 的宝箱内容在区块生成时就已掷定、与玩家无关。
 
 ---
 
@@ -220,6 +224,8 @@
 - 磁铁戒指、末影戒指、法术石等饰品的实际交互。
 - 怪物猎人勋章四项效果链的端到端游戏内验证（伤害倍率、双倍经验、+1 抢夺与斩首概率）；目前只做了调用链静态核对与启动冒烟。
 - 猎宝者护符的触及距离：已验证双端 mixin 均能正常应用（服务端探针调用 `ItemInWorldManager#getBlockReachDistance` 返回 5.0，客户端 `PlayerControllerMP` 加载无异常），但未做「佩戴护符后实际挖/放到 7 格」的游戏内实测。
+- 血战沙场之证的四项效果：攻击伤害与伤害抗性走 `EnigmaticEventHandler#onEntityHurt`（静态核对已闭合），移动速度走 `AttributeMap`（1.7.10 属性系统本身可用），攻击速度改为缩短受击无敌帧（公式 `max/2 + (max/2)/(1+加成)`）；四者均未做游戏内数值实测。
+- 精美戒指的 +1 幸运：已验证注入能正常应用（服务端强制加载 `EnchantmentHelper`/`EntityFishHook` 无异常），但未做「戴戒指钓鱼，统计垃圾/宝藏比例」的游戏内实测。
 
 ---
 

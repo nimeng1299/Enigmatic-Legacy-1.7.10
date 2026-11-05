@@ -23,6 +23,7 @@ item.enigmaticlegacy.loot_generator.name=战利品一体化盒
 item.enigmaticlegacy.thicc_scroll.name=空卷轴
 item.enigmaticlegacy.iron_ring.name=铁指环
 tooltip.enigmaticlegacy.ironRingArmor=§9+1 护甲值
+tooltip.enigmaticlegacy.goldenRingLuck=§9+1 幸运
 item.enigmaticlegacy.haste_potion_default.name=急迫药水 §4[弃用]
 item.enigmaticlegacy.haste_potion_extended.name=急迫药水 §4[弃用]
 item.enigmaticlegacy.haste_potion_empowered.name=急迫药水 §4[弃用]

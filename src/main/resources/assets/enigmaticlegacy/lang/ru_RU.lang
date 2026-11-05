@@ -23,6 +23,7 @@ item.enigmaticlegacy.loot_generator.name=Единственный ящик
 item.enigmaticlegacy.thicc_scroll.name=Пустой свиток
 item.enigmaticlegacy.iron_ring.name=Железное кольцо
 tooltip.enigmaticlegacy.ironRingArmor=§9+1 Броня
+tooltip.enigmaticlegacy.goldenRingLuck=§9+1 Удача
 item.enigmaticlegacy.haste_potion_default.name=Зелье спешки
 item.enigmaticlegacy.haste_potion_extended.name=Зелье спешки
 item.enigmaticlegacy.haste_potion_empowered.name=Зелье спешки

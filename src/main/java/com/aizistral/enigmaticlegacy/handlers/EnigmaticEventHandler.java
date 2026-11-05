@@ -1335,6 +1335,18 @@ public class EnigmaticEventHandler {
 
             event.ammount += damageBoost;
 
+            /*
+             * 1.7.10 has no attack cooldown for the emblem's ATTACK_SPEED modifier to shorten,
+             * so the attack speed bonus is applied to the victim's post-hit invulnerability
+             * window instead. Melee only, mirroring the modern cooldown, which projectiles
+             * never used.
+             */
+
+            if (event.ammount > 0F && CompatDamage.is(source, DamageTypes.PLAYER_ATTACK)
+                && SuperpositionHandler.hasCurio(player, EnigmaticItems.BERSERK_CHARM)) {
+                BerserkEmblem.shortenHurtResistance(player, victim);
+            }
+
             if (SuperpositionHandler.hasCurio(player, EnigmaticItems.EYE_OF_NEBULA)) {
                 if (SuperpositionHandler.isMagic(source)) {
                     event.ammount *= EyeOfNebula.magicBoost.getValue()

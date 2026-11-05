@@ -23,6 +23,7 @@ item.enigmaticlegacy.loot_generator.name=A Caixa Única
 item.enigmaticlegacy.thicc_scroll.name=Pergaminho em Branco
 item.enigmaticlegacy.iron_ring.name=Anel de Ferro
 tooltip.enigmaticlegacy.ironRingArmor=§9+1 Armadura
+tooltip.enigmaticlegacy.goldenRingLuck=§9+1 Sorte
 item.enigmaticlegacy.haste_potion_default.name=Poção de Pressa §4[Descontinuada]
 item.enigmaticlegacy.haste_potion_extended.name=Poção de Pressa §4[Descontinuada]
 item.enigmaticlegacy.haste_potion_empowered.name=Poção de Pressa §4[Descontinuada]
