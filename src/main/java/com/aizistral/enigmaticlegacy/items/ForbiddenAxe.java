@@ -6,8 +6,10 @@ import javax.annotation.Nullable;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
@@ -19,6 +21,7 @@ import com.aizistral.enigmaticlegacy.compat.Enchantments;
 import com.aizistral.enigmaticlegacy.compat.Screen;
 import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
+import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.items.generic.ItemBaseTool;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticTabs;
@@ -80,6 +83,17 @@ public class ForbiddenAxe extends ItemBaseTool implements ICreativeTabMember {
             looting = EnchantmentHelper.getEnchantmentLevel((Enchantments.LOOTING).effectId, stack);
         }
 
+        // 1.20 also folds the looting granted by curio items into the displayed chance, which is
+        // what the server-side drop check sees as well (MixinEnchantmentHelper feeds the same
+        // bonus into getLootingModifier). Without this the tooltip understates the real chance.
+        EntityPlayer player = worldIn != null && worldIn.isRemote
+            ? net.minecraft.client.Minecraft.getMinecraft().thePlayer
+            : null;
+
+        if (player != null) {
+            looting += SuperpositionHandler.getCurioLootingBonus(player, DamageSource.generic, player);
+        }
+
         ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.void");
         ItemLoreHelper.addLocalizedString(
             list,
@@ -92,6 +106,13 @@ public class ForbiddenAxe extends ItemBaseTool implements ICreativeTabMember {
                 + "%");
     }
 
+    /**
+     * 1.20's {@code isCorrectToolForDrops} override. 1.7.10 routes the same decision through
+     * {@code func_150897_b}/{@code canHarvestBlock}, which this item inherits from
+     * {@link ItemBaseTool}: both this item's effective blocks and effective tags are empty, so the
+     * axe already harvests nothing and only digs at bare-hand speed - the same result 1.20 gets by
+     * hard-coding {@code false}. Kept as documentation of intent.
+     */
     public boolean isCorrectToolForDrops(BlockState blockIn) {
         return false;
     }

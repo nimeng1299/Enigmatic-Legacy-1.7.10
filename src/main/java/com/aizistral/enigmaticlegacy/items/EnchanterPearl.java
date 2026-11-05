@@ -1,11 +1,16 @@
 package com.aizistral.enigmaticlegacy.items;
 
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
+import net.minecraft.enchantment.EnchantmentData;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
 import com.aizistral.enigmaticlegacy.api.items.ICursed;
@@ -57,7 +62,8 @@ public class EnchanterPearl extends ItemBaseCurio implements ICursed {
         ItemStack stack) {
         Multimap<Attribute, AttributeModifier> attributes = HashMultimap.create();
 
-        if (slotContext.entity() instanceof EntityPlayer player && SuperpositionHandler.isTheCursedOne(player)) {}
+        // 1.20 grants +1 charm slot here. Baubles allocates its slots statically for every
+        // player, so there is no per-player slot to unlock - see PORTING_REMAINING, charm slots.
 
         return attributes;
     }
@@ -75,6 +81,69 @@ public class EnchanterPearl extends ItemBaseCurio implements ICursed {
     public boolean canEquip(SlotContext context, ItemStack stack) {
         return context.entity() instanceof EntityPlayer player && SuperpositionHandler.isTheCursedOne(player)
             && super.canEquip(context, stack);
+    }
+
+    /**
+     * Reproduces the enchantment rolls 1.20 grants to a pearl bearer: the item is rolled twice,
+     * the second time at a level 7 higher (capped at 40) and with treasure enchantments allowed,
+     * and both results are merged - which is what "greater amount and power of enchantments"
+     * in the tooltip amounts to.
+     * <p>
+     * The 1.20 implementation also converts a rolled Curse of Binding into Eternal Binding with a
+     * 50% chance. 1.7.10 has no Curse of Binding at all, so that step is skipped; the mod's own
+     * curses are ordinary enchantments here and can be rolled by the second pass directly
+     * (1.7.10's {@code mapEnchantmentData} does not filter treasure-only enchantments).
+     *
+     * @return The enchanted stack, or null if the input cannot be enchanted or nothing rolled.
+     */
+    public static ItemStack applyEnchanting(ItemStack input, int level, Random rand) {
+        if (input == null || !input.isItemEnchantable()) return null;
+
+        List<EnchantmentData> primary = EnchantmentHelper.buildEnchantmentList(rand, input, level);
+
+        if (primary == null || primary.isEmpty()) return null;
+
+        // Books lose one of the rolled enchantments, exactly like vanilla does for both versions.
+        if (input.getItem() == Items.book && primary.size() > 1) {
+            primary.remove(rand.nextInt(primary.size()));
+        }
+
+        ItemStack result = prepareForEnchanting(input);
+        applyEnchantments(result, primary);
+
+        List<EnchantmentData> secondary = EnchantmentHelper.buildEnchantmentList(rand, input, Math.min(level + 7, 40));
+
+        if (secondary != null && !secondary.isEmpty()) {
+            ItemStack extra = prepareForEnchanting(input);
+            applyEnchantments(extra, secondary);
+            result = SuperpositionHandler.mergeEnchantments(result, extra, false, false);
+        }
+
+        return result;
+    }
+
+    private static ItemStack prepareForEnchanting(ItemStack input) {
+        if (input.getItem() != Items.book) return input.copy();
+
+        ItemStack book = new ItemStack(Items.enchanted_book);
+
+        if (input.stackTagCompound != null) {
+            book.stackTagCompound = (NBTTagCompound) input.stackTagCompound.copy();
+        }
+
+        return book;
+    }
+
+    private static void applyEnchantments(ItemStack stack, List<EnchantmentData> enchantments) {
+        boolean isBook = stack.getItem() == Items.enchanted_book;
+
+        for (EnchantmentData data : enchantments) {
+            if (isBook) {
+                Items.enchanted_book.addEnchantment(stack, data);
+            } else {
+                stack.addEnchantment(data.enchantmentobj, data.enchantmentLevel);
+            }
+        }
     }
 
 }

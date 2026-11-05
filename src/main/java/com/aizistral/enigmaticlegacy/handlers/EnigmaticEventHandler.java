@@ -1961,7 +1961,9 @@ public class EnigmaticEventHandler {
 
             if (killed.getClass() == EntitySkeleton.class) {
                 skullMeta = ((EntitySkeleton) killed).getSkeletonType() == 1 ? 1 : 0;
-            } else if (killed.getClass() == EntityZombie.class) {
+            } else if (killed.getClass() == EntityZombie.class && !((EntityZombie) killed).isVillager()) {
+                // 1.20 checks for Zombie.class exactly, which excludes ZombieVillager - in 1.7.10
+                // a villager zombie is still an EntityZombie with a flag, so it is filtered here.
                 skullMeta = 2;
             } else if (killed.getClass() == EntityCreeper.class) {
                 skullMeta = 4;
