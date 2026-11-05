@@ -23,6 +23,8 @@
 
 现状：`objects/SpecialLootModifier` 只保留了配置项，`registries/EnigmaticLootModifiers` 仅实现了 Earth Heart 一项；**Earth Heart 的地牢宝箱注入已实现**（`EnigmaticLootModifiers.register()`，六类地牢宝箱，权重 7，受 `CustomDungeonLootEnabled` 与 `EarthHeartEnabled` 控制），其余三项（Architect Eye / Ichor Bottle / Astral Fruit）**没有任何战利品注入逻辑**。
 
+补充：1.20 主世界地牢 `epic` 池中的**铁指环（权重 20）已补齐**（同一 `EnigmaticLootModifiers.register()`，受 `CustomDungeonLootEnabled` 与 `IronRingEnabled` 双重控制）；同池的磁铁戒指、急迫药水、抄录笔、铁工具与杂项物品仍未注入。
+
 建议实现：监听 Forge 的 `PlayerOpenContainerEvent`，在服务端识别 `ContainerChest` / 末影箱，按玩家持久 NBT 一次性注入物品；末地城宝箱可用维度 + 距离末地岛中心的范围判定近似。
 
 ### 2. 经验掉落修正 — 部分实现
@@ -197,6 +199,8 @@
 3. **无进度 / 配方书**：对应触发器与配方解锁逻辑均不适用。
 4. **依赖替代**：Patchouli → 自绘 `AcknowledgmentBookScreen`；Curios → Baubles-Expanded；JEI → 未接入 NEI。
 5. **龙首 / 部分生物掉落**：1.7.10 无龙首、潜影贝、猪灵等，相关掉落分支已跳过。
+6. **饰品属性自动应用**：1.20 由 Curios 在装备/卸下时自动调用 `ICurioItem#getAttributeModifiers` 并同步到玩家属性表；Baubles 无此机制，移植版中这些 `getAttributeModifiers` 实现原本全部是死代码。**已解决（仅限护甲）**：`MixinEntityPlayerArmor` 通过 `compat/curios/CuriosApi.getEquippedArmorBonus(...)` 实时读取饰品栏中的 `Attributes.ARMOR` 加法修饰器并折算进 `getTotalArmorValue()`，铁指环的 +1 护甲因此生效（双端一致，无需登录/重生时重新同步）；满钻甲时也能生效，总值上限 24 是 1.7.10 `25 - armor` 伤害公式的安全上限。**仍缺失**：其它饰品的 `LUCK` / `ATTACK_DAMAGE` / `ARMOR_TOUGHNESS` 等修饰器没有消费者（1.7.10 也无对应属性系统），如需要应另建通用的双端属性同步桥，注意不要与自行管理属性的物品（Golem Heart、Enigmatic Amulet 等）重复计数。
+7. **属性 tooltip**：1.20 由 Curios 自动显示「+1 Armor」；1.7.10 已在 `IronRing.appendHoverText` 中显式补上本地化行（`tooltip.enigmaticlegacy.ironRingArmor`，五种语言）。其它饰品的属性提示仍未补。
 
 ---
 

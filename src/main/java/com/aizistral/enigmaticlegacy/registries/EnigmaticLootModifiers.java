@@ -71,6 +71,11 @@ public class EnigmaticLootModifiers {
             addToAll(EnigmaticItems.EARTH_HEART, 7);
         }
 
+        // 1.20 adds the Iron Ring to the "epic" overworld dungeon pool with weight 20.
+        if (OmniconfigHandler.isItemEnabled(EnigmaticItems.IRON_RING)) {
+            addToAll(EnigmaticItems.IRON_RING, 20);
+        }
+
         if (OmniconfigHandler.isItemEnabled(EnigmaticItems.UNHOLY_GRAIL)) {
             addToAll(EnigmaticItems.UNHOLY_GRAIL, 1);
         }

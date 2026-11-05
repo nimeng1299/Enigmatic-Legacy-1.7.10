@@ -22,6 +22,7 @@ item.enigmaticlegacy.mending_mixture.name=Mending Mixture
 item.enigmaticlegacy.loot_generator.name=The One Box
 item.enigmaticlegacy.thicc_scroll.name=Blank Scroll
 item.enigmaticlegacy.iron_ring.name=Iron Ring
+tooltip.enigmaticlegacy.ironRingArmor=§9+1 Armor
 item.enigmaticlegacy.haste_potion_default.name=Potion of Haste §4[Deprecated]
 item.enigmaticlegacy.haste_potion_extended.name=Potion of Haste §4[Deprecated]
 item.enigmaticlegacy.haste_potion_empowered.name=Potion of Haste §4[Deprecated]
