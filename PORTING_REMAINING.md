@@ -219,6 +219,19 @@
 
 17. **破烂书籍的战利品掉落**：1.20 用两个**独立** LootPool 注入主世界箱子——`overworldLiterature`（rolls 取 `-7..2`，加进 `SIMPLE_DUNGEON`/`ABANDONED_MINESHAFT`/`STRONGHOLD_CORRIDOR`/`STRONGHOLD_CROSSING`/`DESERT_PYRAMID`/`JUNGLE_TEMPLE` 等，`SHIPWRECK_SUPPLY` 除外）与 `literature`（rolls 取 `-4..3`，加进要塞图书馆），每次 roll 产出一本、NBT 为 `createTome(1..3, 50..500)`。因为取值范围大部分是负数，实际概率是 **20%**（1 或 2 本）与 **37.5%**（1/2/3 本）。1.7.10 的 `ChestGenHooks` 只能让物品与原版条目竞争同一组权重槽，`addItem` 会把概率稀释到个位数，无法表达"独立附加池"，所以改用 mixin：`MixinChestGenHooks` 在 `getItems` 返回时记下类别与数组引用，`MixinWeightedRandomChestContent` 在 `generateChestContents` 返回后按 1.20 的 rolls 公式往随机空槽追加书籍（`EnigmaticLootModifiers.onChestContentsGenerated`）。**数组引用比较**是关键——奖励箱、下界要塞这些直接传私有数组的箱子因此不会被误判成地牢。类别映射：`DUNGEON_CHEST`/`MINESHAFT_CORRIDOR`/`STRONGHOLD_CORRIDOR`/`STRONGHOLD_CROSSING`/`PYRAMID_DESERT_CHEST`/`PYRAMID_JUNGLE_CHEST` → 20%；`STRONGHOLD_LIBRARY` → 37.5%；1.7.10 不存在的结构（冰屋、林地府邸、海底废墟、沉船、掠夺者前哨、末地城）自然跳过。**实测**（临时服务端探针，各 5000 箱）：`dungeonChest` 20.4%、`strongholdLibrary` 38.44%，平均 0.31 / 0.77 本每箱，与理论 20% / 37.5%、0.3 / 0.75 吻合。**凋零书籍 / 腐烂书籍**：同一套机制扩展到下界与末地池——`netherLiterature`（rolls `-7..2`、NBT `createTome(1..3, 100..700)`）加入 `getNetherDungeons()`（下界要塞、堡垒遗迹、废弃传送门），`endLiterature`（rolls `-7..2`、`createTome(1..4, 200..1000)`）加入 `END_CITY_TREASURE`。1.7.10 的下界要塞箱子用的是 `StructureNetherBridgePieces` 的私有静态数组（不经过 ChestGenHooks），所以 `register()` 在注入炽焰核心之后用反射缓存该数组引用，`onChestContentsGenerated` 通过引用识别；末地类别 `endCityTreasure` 仍按名字匹配，等结构 backport mod 填充后自动生效（1.7.10 原版没有末地箱子，也没有下界要塞之外的堡垒遗迹/废弃传送门）。**实测**（各 5000 箱）：下界要塞 / 凋零 20.12%、末地类别 / 腐烂 20.88%，均 0.31 本每箱。
 
+18. **倒转之启（The Twist）**：对照 1.20 `items/TheTwist.java` 逐条核对，除「对 Boss/玩家的 +300% 伤害」「非诅咒者攻击无效」「绕过七咒之戒的怪物伤害减益」「命中点燃 4 秒」「右键开书」原本已实现外，此前**三处效果是死代码**，本次全部补齐：
+
+- **击退 +300%**：`EnigmaticEventHandler:1020` 原先只有一句「1.7.10: no LivingKnockBackEvent」注释。1.7.10 的近战位移分两段——`EntityLivingBase#attackEntityFrom` 里经 `knockBack` 施加的固定 0.4（该值是 `knockBack` 内的硬编码常量，参数 `strength` 根本没用），以及 `EntityPlayer#attackTargetEntityWithCurrentItem` 里为附魔/冲刺追加的 `Entity#addVelocity`。`MixinEntityPlayerKnockback` 现在两段都覆盖：`@Redirect` 缩放 `addVelocity`，`@Inject(TAIL)` 追加 `0.4 × (倍率 - 1)` 的水平速度（方向取「受害者 - 攻击者」，退化时用攻击者朝向），因此默认为 0.4 → 1.6，与 1.20 的 `strength(0.4) × 4` 等价。同一条链路顺带接通了**无限之启 +200%**、**末影杀手 +600%**（仅末地生物）与**建筑师之恩 +100%**（仅玩家目标），后两者此前同样只有注释。命中判定用 `hurtTime > 0`，被取消/拒绝的攻击不会推动目标；击退抗性沿用原版的随机判定。
+- **攻击伤害 9 / 攻击速度 -1.8**：`TheAcknowledgment` 只实现了现代的双参 `getAttributeModifiers(EquipmentSlot, ItemStack)`，而 1.7.10 从 `Item#getAttributeModifiers(ItemStack)` 读取装备属性，二者之间没有任何桥接，导致三本书的伤害修饰器从未生效（实际只有空手 1 点伤害）。现补上 `getAttributeModifiers(ItemStack)`，把主手修饰器并入原版 `Multimap`。**攻击速度在 1.7.10 无消费者**（无攻击冷却，`RegisteredMeleeAttack` 恒返回 1.0），-1.8 仍只是占位数据。
+- **附魔能力 24**：1.7.10 只有无参的 `Item#getItemEnchantability()`，`getEnchantmentValue(ItemStack)` 永远不会被调用，已改为无参 `getEnchantmentValue()`（`ItemBase` 已有桥接）。
+- **`use()` 的副手判定**：原代码在 `hand == MAIN_HAND` 分支里再次取 `getHeldItem()`（还是主手），本意是「副手举盾时不翻书」。1.7.10 没有副手槽，直接删除该分支并注明原因。
+
+**平台不适用**：幻翼击退 ×1.5（1.7.10 无幻翼）；书籍标题仍固定显示 "The Acknowledgment"，不随手持的倒转之启/无限之启变化（1.20 由 `gui/AcknowlegmentNameRenderer` 实现，属第 13 条）。
+
+**顺带发现的同类隐患（未改动）**：`TheJudgement`、`EldritchPan` 等 `ItemBase` 武器同样只实现了双参属性方法，它们的攻击伤害/攻速也从未生效。若要统一修复，把同一段 `getAttributeModifiers(ItemStack)` 桥接提到 `ItemBase` 即可，但会一次性改变这些武器的实战表现，建议单独评估。
+
+**验证**：服务端探针确认 `enigmaticlegacy$knockbackMultiplier` 已被并入 `EntityPlayer`（mixin 应用成功）、`ItemStack#getAttributeModifiers()` 返回 `generic.attackDamage=+8` / `generic.attackSpeed=-1.8`、`getItemEnchantability()=24`；`./gradlew build`（含 Spotless/Checkstyle）通过，服务端启动无异常。**未做**：游戏内实际挥击的击退手感与伤害数值实测。
+
 ---
 
 ## 七、已实现但未完整实测

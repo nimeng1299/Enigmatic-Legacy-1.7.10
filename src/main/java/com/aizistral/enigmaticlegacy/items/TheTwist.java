@@ -12,7 +12,6 @@ import net.minecraft.world.World;
 import com.aizistral.enigmaticlegacy.api.generic.SubscribeConfig;
 import com.aizistral.enigmaticlegacy.api.items.ICursed;
 import com.aizistral.enigmaticlegacy.compat.InteractionHand;
-import com.aizistral.enigmaticlegacy.compat.InteractionResult;
 import com.aizistral.enigmaticlegacy.compat.InteractionResultHolder;
 import com.aizistral.enigmaticlegacy.compat.Screen;
 import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
@@ -110,14 +109,8 @@ public class TheTwist extends TheAcknowledgment implements ICursed {
     public InteractionResultHolder<ItemStack> use(World world, EntityPlayer player, InteractionHand hand) {
         if (!SuperpositionHandler.isTheCursedOne(player)) return InteractionResultHolder.pass(player.getHeldItem());
 
-        if (hand == InteractionHand.MAIN_HAND) {
-            ItemStack offhandStack = player.getHeldItem();
-
-            if (offhandStack != null && (offhandStack.getItem()
-                .getItemUseAction(offhandStack) == net.minecraft.item.EnumAction.block))
-                return new InteractionResultHolder<ItemStack>(InteractionResult.PASS, player.getHeldItem());
-        }
-
+        // 1.20 skips opening the book while the offhand is blocking with a shield.
+        // 1.7.10 has no offhand slot, so there is nothing to defer to here.
         return super.use(world, player, hand);
     }
 

@@ -107,13 +107,40 @@ public class TheAcknowledgment extends ItemBase implements Vanishable {
         return super.hurtEnemy(stack, target, attacker);
     }
 
-    public int getEnchantmentValue(ItemStack stack) {
+    @Override
+    public int getEnchantmentValue() {
+        // 1.7.10 asks for enchantability without the stack, so the modern
+        // stack-based signature would never be called.
         return 24;
     }
 
     public Multimap<Attribute, AttributeModifier> getAttributeModifiers(EquipmentSlot slot, ItemStack stack) {
         if (slot.equals(EquipmentSlot.MAINHAND)) return this.attributes;
         else return super.getAttributeModifiers(slot, stack);
+    }
+
+    /**
+     * 1.7.10 reads weapon attributes from {@code getAttributeModifiers(ItemStack)} and
+     * has no notion of equipment slots there, so the main-hand modifiers built in the
+     * constructor are forwarded to the vanilla multimap. Without this the books would
+     * only ever deal fist damage.
+     */
+    @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public Multimap getAttributeModifiers(ItemStack stack) {
+        ImmutableMultimap.Builder builder = ImmutableMultimap.builder();
+        builder.putAll(super.getAttributeModifiers(stack));
+
+        for (Object object : this.attributes.entries()) {
+            java.util.Map.Entry<Attribute, AttributeModifier> entry = (java.util.Map.Entry<Attribute, AttributeModifier>) object;
+            builder.put(
+                entry.getKey()
+                    .toVanilla()
+                    .getAttributeUnlocalizedName(),
+                entry.getValue());
+        }
+
+        return builder.build();
     }
 
     @Nonnull

@@ -1017,7 +1017,9 @@ public class EnigmaticEventHandler {
                     }
                 }
 
-                // 1.7.10: no LivingKnockBackEvent, so knockback power bonuses cannot be applied.
+                // Knockback power bonuses (The Twist / The Infinitum / The Ender Slayer /
+                // The Architect's Favor) are applied in MixinEntityPlayerKnockback, since
+                // 1.7.10 has no LivingKnockBackEvent to hijack.
             }
 
             if (event.entityLiving instanceof EntityAnimal && direct instanceof EntityPlayer) {
