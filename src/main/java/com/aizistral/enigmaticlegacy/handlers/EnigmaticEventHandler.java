@@ -1383,7 +1383,11 @@ public class EnigmaticEventHandler {
                                     .asModifierInverted()
                                 : event.ammount;
 
-                        owner.attackEntityFrom(DamageSource.causeMobDamage(pet), redirected);
+                        // 1.20 hands the original damage source to the owner's hurt() call, so
+                        // protections (blast / projectile / fire), death messages and kill credit
+                        // stay attributable. Substituting a generic mob source here would turn
+                        // every redirected arrow or explosion into plain mob damage.
+                        owner.attackEntityFrom(event.source, redirected);
                     }
                 }
             }

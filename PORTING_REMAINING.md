@@ -234,6 +234,12 @@
 
 **验证**：服务端探针确认 `enigmaticlegacy$knockbackMultiplier` 已被并入 `EntityPlayer`（mixin 应用成功）、倒转之启返回 `generic.attackDamage=+8` / `generic.attackSpeed=-1.8`、审判之剑返回 `+∞` / `+28`、邪术锅返回 `+31` / `-3.2` / `+4 护甲`、启示之证返回 `+3.5` / `-2.1`，`getItemEnchantability()=24`；`./gradlew build`（含 Spotless/Checkstyle）通过，服务端启动无异常。**未做**：游戏内实际挥击的击退手感、伤害数值与 tooltip 最终观感实测。
 
+19. **野猎指南（Hunter Guidebook）**：1.20 上该物品只有一条效果——主人背包里有它时，`effectiveDistance`（默认 24）格内**已驯服**宠物受到的伤害会被取消并原样转移给主人；若主人同时持有兽友指南，转移量再乘 `SynergyDamageReduction` 的反向修正（默认 50%）。移植版**原本已实现**（`EnigmaticEventHandler.onEntityHurt` 的 `victim instanceof EntityTameable` 分支），本次核对只发现一处保真度差异并修复：原实现把来源替换成 `DamageSource.causeMobDamage(pet)`，而 1.20 是把 `event.getSource()` 直接交给 `owner.hurt(...)`——在 1.7.10 这意味着被箭/火球/爆炸打中的转移伤害统统变成「生物近战」类型，弹射物保护、爆炸保护、火焰保护全部失效，死亡提示与击杀归属也失真。现改为 `owner.attackEntityFrom(event.source, redirected)`，来源类型、保护附魔与归属链恢复与 1.20 一致。
+
+**实测**（临时服务端探针：FakePlayer 作主人 + 每例新生成的已驯服狼，避免受击无敌帧吞掉后续伤害）：无指南时狼 20→14；持野猎指南时狼保持 20、转移 `amount=6 / redirected=6`；再加兽友指南时 `redirected=3`（50% 减伤），且 `event.source` 的 `damageType` 原样传递。（FakePlayer 的 `attackEntityFrom` 恒返回 false 是 Forge 的保护，所以探针里主人血量不变；数值验证走的是转移量日志，真实玩家会受到对应伤害。**未做**：真实玩家的游戏内实测。）
+
+**平台差异（行为一致，无需处理）**：1.7.10 的 `EntityTameable` 只覆盖狼/豹猫，1.20 的 `TamableAnimal` 覆盖狼/猫/鹦鹉——1.7.10 没有鹦鹉；马在两边都不属于该体系（1.7.10 `EntityHorse` / 1.20 `AbstractHorse` 走 `OwnableEntity`），所以两边都不会转移马匹伤害。物品本身除 tooltip、`stacksTo(1)`、`RARE` 稀有度外没有其它逻辑（`Vanishable` 是 1.20 的标记接口，1.7.10 无对应机制）。
+
 ---
 
 ## 七、已实现但未完整实测
