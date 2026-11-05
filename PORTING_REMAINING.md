@@ -201,6 +201,9 @@
 5. **龙首 / 部分生物掉落**：1.7.10 无龙首、潜影贝、猪灵等，相关掉落分支已跳过。
 6. **饰品属性自动应用**：1.20 由 Curios 在装备/卸下时自动调用 `ICurioItem#getAttributeModifiers` 并同步到玩家属性表；Baubles 无此机制，移植版中这些 `getAttributeModifiers` 实现原本全部是死代码。**已解决（仅限护甲）**：`MixinEntityPlayerArmor` 通过 `compat/curios/CuriosApi.getEquippedArmorBonus(...)` 实时读取饰品栏中的 `Attributes.ARMOR` 加法修饰器并折算进 `getTotalArmorValue()`，铁指环的 +1 护甲因此生效（双端一致，无需登录/重生时重新同步）；满钻甲时也能生效，总值上限 24 是 1.7.10 `25 - armor` 伤害公式的安全上限。**仍缺失**：其它饰品的 `LUCK` / `ATTACK_DAMAGE` / `ARMOR_TOUGHNESS` 等修饰器没有消费者（1.7.10 也无对应属性系统），如需要应另建通用的双端属性同步桥，注意不要与自行管理属性的物品（Golem Heart、Enigmatic Amulet 等）重复计数。
 7. **属性 tooltip**：1.20 由 Curios 自动显示「+1 Armor」；1.7.10 已在 `IronRing.appendHoverText` 中显式补上本地化行（`tooltip.enigmaticlegacy.ironRingArmor`，五种语言）。其它饰品的属性提示仍未补。
+8. **怪物猎人勋章的作用范围**：已静态核对，四项效果链全部闭合（伤害加成 `EnigmaticEventHandler.onEntityHurt` → EVENT_BUS；双倍经验 `MixinEntityLivingBase` → `SuperpositionHandler.applyExperienceBonuses`；+1 抢夺 `MixinEnchantmentHelper` → `getCurioLootingBonus` → `MonsterCharm.getLootingLevel`，且 `LivingDropsEvent.lootingLevel` 与原版同源，斩首概率随之受益）。但 1.7.10 用 `IMob` 判定受害者/死者，1.20 用 `Monster`（伤害分支另加 EnderDragon、并有 `isAggressive()` / `canChangeDimensions()` 门槛），因此 1.7.10 对恶魂、史莱姆、岩浆怪、末影龙也提供 +10% 伤害与双倍经验（恶魂在伤害分支被显式排除，经验分支没有）。**未改动**：收紧会削弱现有行为并同时影响七咒之戒的怪物伤害减益分支。若要严格对齐，把 `EnigmaticEventHandler.java:1288` 与 `SuperpositionHandler.java:253` 的判定收紧为 `EntityMob`。
+9. **勋章的两个布尔开关**：1.20 里 `DoubleXP` / `BonusLooting` 都只是 tooltip 死配置，关掉仍生效；1.7.10 的 `DoubleXP` 本来就真的生效，本次起 `BonusLooting` 也在 `MonsterCharm.getLootingLevel` 里生效，避免 tooltip 说"没有 +1 抢夺"而实际仍有。默认 true 时两版行为一致，设为 false 时 1.7.10 会真的关闭效果（比上游更符合配置语义）。
+10. **charm 槽位与槽位解锁**：1.20 的 charm 槽默认 1 个、可由 Ichor Bottle 永久 +1；1.7.10 用 Baubles 的 AMULET 槽（同样 1 个，数量等价），Baubles-Expanded 虽有内置 `charmType` 但未单独分配槽位。`SuperpositionHandler.unlockSpecialSlot` 为空实现（Baubles 槽位是全局静态分配，无每玩家解锁机制）、`CHARM_SLOT_UUID` 为零引用死字段、`isSlotLocked` 恒 false。属于平台差异，不是勋章专属缺失；若改动需同时迁移 11 个 charm 类物品并考虑旧存档槽位兼容。
 
 ---
 
@@ -213,6 +216,7 @@
 - 引言播放时序（音乐延迟、字幕淡入淡出）与全部 28 段引言触发点。
 - 酿造边界情况（多槽同时酿造、普通/喷溅/滞留转换）。
 - 磁铁戒指、末影戒指、法术石等饰品的实际交互。
+- 怪物猎人勋章四项效果链的端到端游戏内验证（伤害倍率、双倍经验、+1 抢夺与斩首概率）；目前只做了调用链静态核对与启动冒烟。
 
 ---
 

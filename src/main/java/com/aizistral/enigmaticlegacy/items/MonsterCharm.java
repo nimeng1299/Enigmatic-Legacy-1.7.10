@@ -93,9 +93,20 @@ public class MonsterCharm extends ItemBaseCurio {
         }
     }
 
+    /**
+     * On 1.20 Curios dispatches this callback for every equipped curio; on 1.7.10
+     * it is reached through {@code MixinEnchantmentHelper}. Upstream leaves the
+     * {@code BonusLooting} switch tooltip-only, so disabling it still granted the
+     * level. The port honours the switch so the tooltip matches the actual effect.
+     */
+    @Override
     public int getLootingLevel(SlotContext slotContext, DamageSource source, EntityLivingBase target, int baseLooting,
         ItemStack curio) {
-        return super.getLootingLevel(slotContext, source, target, baseLooting, curio) + 1;
+        int level = super.getLootingLevel(slotContext, source, target, baseLooting, curio);
+
+        if (!bonusLootingEnabled.getValue()) return level;
+
+        return level + 1;
     }
 
 }
