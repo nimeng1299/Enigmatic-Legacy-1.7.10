@@ -231,7 +231,9 @@ public abstract class ItemBase extends Item implements ICreativeTabMember {
             advanced ? TooltipFlag.ADVANCED : TooltipFlag.NORMAL);
 
         for (Component component : tooltip) {
-            list.add(component.getFormattedText());
+            list.add(
+                component.asVanillaComponent()
+                    .getFormattedText());
         }
     }
 
@@ -312,7 +314,8 @@ public abstract class ItemBase extends Item implements ICreativeTabMember {
     @Override
     public String getItemStackDisplayName(ItemStack stack) {
         Component name = this.getName(stack);
-        return name != null ? name.getFormattedText() : super.getItemStackDisplayName(stack);
+        return name != null ? name.asVanillaComponent()
+            .getFormattedText() : super.getItemStackDisplayName(stack);
     }
 
     @Override

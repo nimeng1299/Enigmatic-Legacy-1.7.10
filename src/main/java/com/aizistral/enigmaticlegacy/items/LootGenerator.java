@@ -176,6 +176,7 @@ public class LootGenerator extends ItemBase implements Vanishable {
                     new ChatComponentText(
                         Component.translatable("message.enigmaticlegacy.gen_sim_complete")
                             .withStyle(EnumChatFormatting.DARK_PURPLE)
+                            .asVanillaComponent()
                             .getFormattedText()));
             } else {
                 for (int slot = 0; slot < chest.getSizeInventory(); slot++) {

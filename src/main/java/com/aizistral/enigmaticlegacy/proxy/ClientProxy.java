@@ -11,6 +11,7 @@ import com.gtnewhorizon.gtnhlib.client.model.loading.ModelRegistry;
 
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -60,6 +61,19 @@ public class ClientProxy extends CommonProxy {
 
         net.minecraftforge.common.MinecraftForge.EVENT_BUS
             .register(new com.aizistral.enigmaticlegacy.client.gui.QuoteOverlay());
+
+        if (cpw.mods.fml.common.Loader.isModLoaded("NotEnoughItems")) {
+            com.aizistral.enigmaticlegacy.client.nei.NEIPlugin.register();
+        }
+    }
+
+    @Override
+    public void postInit(FMLPostInitializationEvent event) {
+        super.postInit(event);
+
+        if (cpw.mods.fml.common.Loader.isModLoaded("NotEnoughItems")) {
+            com.aizistral.enigmaticlegacy.client.nei.NEIPlugin.preload();
+        }
     }
 
     @Override

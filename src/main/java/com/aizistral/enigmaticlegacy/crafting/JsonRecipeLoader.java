@@ -49,6 +49,10 @@ public final class JsonRecipeLoader {
     }
 
     public static void load() {
+        int before = CraftingManager.getInstance()
+            .getRecipeList()
+            .size();
+
         for (String file : listRecipeFiles()) {
             try {
                 JsonObject json = readJson(RECIPE_ROOT + "/" + file);
@@ -61,6 +65,15 @@ public final class JsonRecipeLoader {
                 EnigmaticLegacy.LOGGER.error("Failed to load recipe " + file, ex);
             }
         }
+
+        EnigmaticLegacy.LOGGER.info(
+            "Registered {} JSON recipes ({} total).",
+            CraftingManager.getInstance()
+                .getRecipeList()
+                .size() - before,
+            CraftingManager.getInstance()
+                .getRecipeList()
+                .size());
     }
 
     private static List<String> listRecipeFiles() {

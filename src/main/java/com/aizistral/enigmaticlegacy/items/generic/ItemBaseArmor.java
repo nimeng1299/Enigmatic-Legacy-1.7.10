@@ -103,7 +103,9 @@ public abstract class ItemBaseArmor extends ItemArmor implements ICreativeTabMem
 
         // Vanilla expects plain Strings in this list; Components would crash NEI and creative search
         for (Component component : lore) {
-            list.add(component.getFormattedText());
+            list.add(
+                component.asVanillaComponent()
+                    .getFormattedText());
         }
     }
 
