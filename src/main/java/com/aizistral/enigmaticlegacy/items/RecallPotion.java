@@ -43,7 +43,7 @@ public class RecallPotion extends ItemBasePotion {
     @Override
     public void onConsumed(World worldIn, EntityPlayer player, ItemStack potion) {
         if (player instanceof EntityPlayerMP) {
-            SuperpositionHandler.backToSpawn((EntityPlayerMP) player);
+            SuperpositionHandler.backToSpawn((EntityPlayerMP) player, 0.1D);
         }
     }
 
