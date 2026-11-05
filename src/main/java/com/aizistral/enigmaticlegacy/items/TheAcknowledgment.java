@@ -119,30 +119,6 @@ public class TheAcknowledgment extends ItemBase implements Vanishable {
         else return super.getAttributeModifiers(slot, stack);
     }
 
-    /**
-     * 1.7.10 reads weapon attributes from {@code getAttributeModifiers(ItemStack)} and
-     * has no notion of equipment slots there, so the main-hand modifiers built in the
-     * constructor are forwarded to the vanilla multimap. Without this the books would
-     * only ever deal fist damage.
-     */
-    @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public Multimap getAttributeModifiers(ItemStack stack) {
-        ImmutableMultimap.Builder builder = ImmutableMultimap.builder();
-        builder.putAll(super.getAttributeModifiers(stack));
-
-        for (Object object : this.attributes.entries()) {
-            java.util.Map.Entry<Attribute, AttributeModifier> entry = (java.util.Map.Entry<Attribute, AttributeModifier>) object;
-            builder.put(
-                entry.getKey()
-                    .toVanilla()
-                    .getAttributeUnlocalizedName(),
-                entry.getValue());
-        }
-
-        return builder.build();
-    }
-
     @Nonnull
     public InteractionResultHolder<ItemStack> use(World world, EntityPlayer player, InteractionHand hand) {
         ItemStack stack = player.getHeldItem();

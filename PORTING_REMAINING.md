@@ -222,15 +222,17 @@
 18. **倒转之启（The Twist）**：对照 1.20 `items/TheTwist.java` 逐条核对，除「对 Boss/玩家的 +300% 伤害」「非诅咒者攻击无效」「绕过七咒之戒的怪物伤害减益」「命中点燃 4 秒」「右键开书」原本已实现外，此前**三处效果是死代码**，本次全部补齐：
 
 - **击退 +300%**：`EnigmaticEventHandler:1020` 原先只有一句「1.7.10: no LivingKnockBackEvent」注释。1.7.10 的近战位移分两段——`EntityLivingBase#attackEntityFrom` 里经 `knockBack` 施加的固定 0.4（该值是 `knockBack` 内的硬编码常量，参数 `strength` 根本没用），以及 `EntityPlayer#attackTargetEntityWithCurrentItem` 里为附魔/冲刺追加的 `Entity#addVelocity`。`MixinEntityPlayerKnockback` 现在两段都覆盖：`@Redirect` 缩放 `addVelocity`，`@Inject(TAIL)` 追加 `0.4 × (倍率 - 1)` 的水平速度（方向取「受害者 - 攻击者」，退化时用攻击者朝向），因此默认为 0.4 → 1.6，与 1.20 的 `strength(0.4) × 4` 等价。同一条链路顺带接通了**无限之启 +200%**、**末影杀手 +600%**（仅末地生物）与**建筑师之恩 +100%**（仅玩家目标），后两者此前同样只有注释。命中判定用 `hurtTime > 0`，被取消/拒绝的攻击不会推动目标；击退抗性沿用原版的随机判定。
-- **攻击伤害 9 / 攻击速度 -1.8**：`TheAcknowledgment` 只实现了现代的双参 `getAttributeModifiers(EquipmentSlot, ItemStack)`，而 1.7.10 从 `Item#getAttributeModifiers(ItemStack)` 读取装备属性，二者之间没有任何桥接，导致三本书的伤害修饰器从未生效（实际只有空手 1 点伤害）。现补上 `getAttributeModifiers(ItemStack)`，把主手修饰器并入原版 `Multimap`。**攻击速度在 1.7.10 无消费者**（无攻击冷却，`RegisteredMeleeAttack` 恒返回 1.0），-1.8 仍只是占位数据。
+- **攻击伤害 9 / 攻击速度 -1.8**：`TheAcknowledgment` 只实现了现代的双参 `getAttributeModifiers(EquipmentSlot, ItemStack)`，而 1.7.10 从 `Item#getAttributeModifiers(ItemStack)` 读取装备属性，二者之间没有任何桥接，导致三本书的伤害修饰器从未生效（实际只有空手 1 点伤害）。桥接现统一实现在 `ItemBase.getAttributeModifiers(ItemStack)`（见下条），把主手修饰器并入原版 `Multimap`。**攻击速度在 1.7.10 无消费者**（无攻击冷却，`RegisteredMeleeAttack` 恒返回 1.0），-1.8 仍只是占位数据。
 - **附魔能力 24**：1.7.10 只有无参的 `Item#getItemEnchantability()`，`getEnchantmentValue(ItemStack)` 永远不会被调用，已改为无参 `getEnchantmentValue()`（`ItemBase` 已有桥接）。
 - **`use()` 的副手判定**：原代码在 `hand == MAIN_HAND` 分支里再次取 `getHeldItem()`（还是主手），本意是「副手举盾时不翻书」。1.7.10 没有副手槽，直接删除该分支并注明原因。
 
+**同类隐患已统一修复**：`ItemBase` 现在提供 `getAttributeModifiers(ItemStack)` 桥接，等价于「1.7.10 版的默认主手槽装饰器汇入」。`TheJudgement`（∞ +28）、`EldritchPan`、`The Infinitum`、三本书等所有走 `ItemBase` 的武器，其双参属性方法终于生效；此前它们的伤害/攻速全是死数据，只有 `ItemBaseTool` 子类因为另写了 1.7.10 原生 `getItemAttributeModifiers()` 而正常。注意 `EldritchPan` 自己的 "Tool modifier" 与 "Weapon modifier" 共用攻击伤害 UUID，按 UUID 去重后只剩后者（与其 1.20 行为一致）；未重写 `getAttributeModifiers(EquipmentSlot, …)` 的物品（护甲类）返回空 map，桥接直接回落到原版，行为不变。
+
 **平台不适用**：幻翼击退 ×1.5（1.7.10 无幻翼）；书籍标题仍固定显示 "The Acknowledgment"，不随手持的倒转之启/无限之启变化（1.20 由 `gui/AcknowlegmentNameRenderer` 实现，属第 13 条）。
 
-**顺带发现的同类隐患（未改动）**：`TheJudgement`、`EldritchPan` 等 `ItemBase` 武器同样只实现了双参属性方法，它们的攻击伤害/攻速也从未生效。若要统一修复，把同一段 `getAttributeModifiers(ItemStack)` 桥接提到 `ItemBase` 即可，但会一次性改变这些武器的实战表现，建议单独评估。
+**tooltip 文本修复**：`zh_CN.lang` 的 `tooltip.enigmaticlegacy.theTwist2` 末尾带着两枚私用区字符 `U+E908 U+E909`（1.20 里由 unifont 兜底，1.7.10 没有 `unicode_page_e9.png`，客户端会刷 `Failed to load texture: minecraft:textures/font/unicode_page_e9.png` 并渲染成空白/豆腐块）。该字符对在中文里是「……」的替代字形，现已连同其它 12 处一起替换为真正的省略号。检查结论：`theTwist1`~`theTwist7` 五个语言文件全部存在，占位符 `%1$s` 在 1.7.10 的 `ChatComponentTranslation`（`String.format`）下也能正常代入，不存在「显示原始键」的情况（1.7.10 缺键会回落 en_US，而不是打印键名）。
 
-**验证**：服务端探针确认 `enigmaticlegacy$knockbackMultiplier` 已被并入 `EntityPlayer`（mixin 应用成功）、`ItemStack#getAttributeModifiers()` 返回 `generic.attackDamage=+8` / `generic.attackSpeed=-1.8`、`getItemEnchantability()=24`；`./gradlew build`（含 Spotless/Checkstyle）通过，服务端启动无异常。**未做**：游戏内实际挥击的击退手感与伤害数值实测。
+**验证**：服务端探针确认 `enigmaticlegacy$knockbackMultiplier` 已被并入 `EntityPlayer`（mixin 应用成功）、倒转之启返回 `generic.attackDamage=+8` / `generic.attackSpeed=-1.8`、审判之剑返回 `+∞` / `+28`、邪术锅返回 `+31` / `-3.2` / `+4 护甲`、启示之证返回 `+3.5` / `-2.1`，`getItemEnchantability()=24`；`./gradlew build`（含 Spotless/Checkstyle）通过，服务端启动无异常。**未做**：游戏内实际挥击的击退手感、伤害数值与 tooltip 最终观感实测。
 
 ---
 

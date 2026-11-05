@@ -2,6 +2,7 @@ package com.aizistral.enigmaticlegacy.items.generic;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import javax.annotation.Nullable;
@@ -22,7 +23,10 @@ import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
 import com.aizistral.enigmaticlegacy.api.items.ICreativeTabMember;
+import com.aizistral.enigmaticlegacy.compat.Attribute;
+import com.aizistral.enigmaticlegacy.compat.AttributeModifier;
 import com.aizistral.enigmaticlegacy.compat.ClipContext;
+import com.aizistral.enigmaticlegacy.compat.EquipmentSlot;
 import com.aizistral.enigmaticlegacy.compat.FoodProperties;
 import com.aizistral.enigmaticlegacy.compat.InteractionHand;
 import com.aizistral.enigmaticlegacy.compat.InteractionResult;
@@ -33,6 +37,8 @@ import com.aizistral.enigmaticlegacy.compat.UseOnContext;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticTabs;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -186,6 +192,33 @@ public abstract class ItemBase extends Item implements ICreativeTabMember {
     public com.google.common.collect.Multimap<com.aizistral.enigmaticlegacy.compat.Attribute, com.aizistral.enigmaticlegacy.compat.AttributeModifier> getAttributeModifiers(
         com.aizistral.enigmaticlegacy.compat.EquipmentSlot slot, ItemStack stack) {
         return this.getDefaultAttributeModifiers(slot);
+    }
+
+    /**
+     * 1.7.10 reads equipment attributes from {@code Item#getAttributeModifiers(ItemStack)} and
+     * has no notion of equipment slots there, so the main-hand modifiers produced by the modern
+     * slot-based methods are forwarded to the vanilla multimap. Without this bridge the weapon
+     * attributes declared by the ported items (attack damage, attack speed) are dead code.
+     */
+    @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public Multimap getAttributeModifiers(ItemStack stack) {
+        Multimap<Attribute, AttributeModifier> modern = this.getAttributeModifiers(EquipmentSlot.MAINHAND, stack);
+
+        if (modern == null || modern.isEmpty()) return super.getAttributeModifiers(stack);
+
+        ImmutableMultimap.Builder builder = ImmutableMultimap.builder();
+        builder.putAll(super.getAttributeModifiers(stack));
+
+        for (Map.Entry<Attribute, AttributeModifier> entry : modern.entries()) {
+            builder.put(
+                entry.getKey()
+                    .toVanilla()
+                    .getAttributeUnlocalizedName(),
+                entry.getValue());
+        }
+
+        return builder.build();
     }
 
     public boolean hurtEnemy(ItemStack stack, EntityLivingBase target, EntityLivingBase attacker) {
