@@ -1820,7 +1820,9 @@ public class EnigmaticEventHandler {
         deathLocation.putDouble("x", player.posX);
         deathLocation.putDouble("y", player.posY);
         deathLocation.putDouble("z", player.posZ);
-        deathLocation.putString("dimension", String.valueOf(player.worldObj.provider.dimensionId));
+        // 1.20 stores the dimension key string here; 1.7.10 dimensions are plain numeric ids,
+        // and the Twisted Potion reads this back as an int.
+        deathLocation.putInt("dimension", player.worldObj.provider.dimensionId);
 
         SuperpositionHandler.setPersistentTag(player, "LastDeathLocation", deathLocation);
 

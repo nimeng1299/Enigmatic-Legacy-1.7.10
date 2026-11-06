@@ -284,6 +284,19 @@
 
     **保留的差异**：1.7.10 版保留了 1.20/原版都没有的「邻接水时爆炸」（`onNeighborBlockChange`），未做改动。
 
+22. **扭曲恩惠药水（Twisted Potion）**：效果代码本身早就搬过来了（传送到上次死亡点 + 血量置 1 + 两段传送音效/粒子、`ICursed` 标记、诅咒专属 tooltip、召回药水 + 扭曲之心的酿造配方都在），但有两处数据层的错误让"效果实际等于没实现"：
+
+    | 问题 | 实际表现 |
+    | --- | --- |
+    | `LastDeathLocation.dimension` 用 `putString` 写入、用 `getInt` 读出 | `getInteger` 对 `NBTTagString` 抛 `ClassCastException` 被吞掉后返回 **0** → 在下界/末地死亡后喝药，被送到**上世界**的同一坐标 |
+    | `(CompoundTag)` 强转 `getPersistentTag` 的返回值 | `PlayerPersisted` 里的复合标签在重登后是普通 `NBTTagCompound`（compat 子类只存在于写入的那次会话），强转抛 `ClassCastException` → 右键（`canDrink`）或饮用（`onConsumed`）直接崩 |
+
+    修复：死亡点写入改为 `putInt("dimension", dimensionId)`；读取走 `getDeathDimension()`，兼容 int（新格式）与字符串（旧存档，以及 1.20 那套 `minecraft:the_nether` 风格 key），字符串解析失败时回退 0；`getLastDeathLocation` 改为返回普通 `NBTTagCompound` 并用 `instanceof` 判空，不再强转 compat 子类。另外 `SuperpositionHandler.sendToDimension` 补上了目标维度存在性检查（对应 1.20 `sendToDimension` 里的 `world != null`），避免存档里已删除的自定义维度让 `travelToDimension` NPE。
+
+    **一处刻意偏离 1.20**：`canDrink` 在客户端只校验「被诅咒」（`isTheCursedOne`，Baubles 同步到客户端，可用），死亡点只在服务端校验。`PlayerPersisted` 在 1.7.10 从不同步到客户端，客户端若也校验死亡点会恒为 false → `use()` 返回 PASS、没有饮用动画，药水要等松开右键约 1.6 秒后才被服务端自行吞掉。服务端的门槛没有放松，没有死亡点时仍然喝不掉。
+
+    **实测**（临时客户端探针，在服务端线程操作真实 `EntityPlayerMP`；探针已删除）：装上七咒之戒后 `cursed=true`；写入字符串维度 `"-1"` 的旧格式标签 → `canDrink=true`、维度 `0→-1`、坐标 `0.50/70.00/0.50`、血量 `1.0`；写入 int 维度 `0` → `canDrink=true`、维度 `-1→0`、坐标 `1.50/71.00/1.50`、血量 `1.0`；删掉标签 → `canDrink=false`、不传送、无异常。另用 `NBTTagCompound` 单测确认旧代码的 `getInteger` 对字符串标签返回 0、`(CompoundTag)` 对反序列化标签抛 `ClassCastException`。
+
 ---
 
 ## 七、已实现但未完整实测
@@ -326,5 +339,6 @@
 - 服务端冒烟测试：注册表空字段 0/0，5 个法术石，392 条配方（58 条产出本模组物品），Baubles API/饰品判定 true，自定义酿造（粗制 + 石英 → 迅捷）与原版酿造（粗制 + 金胡萝卜 → 夜视）均 PASS。
 - 末影龙深渊之心：`MixinEntityDragon` 应用成功（`IAbyssalHeartBearer` 可赋值），心以 `PermanentItemEntity` 生成、owner 绑定与 `AbyssalHeartsGained` 计数正确（详见第 8 条）。
 - 维度锚：`MixinEntityPlayerSpawn` / `MixinServerConfigurationManager` / `MixinWorldProvider` 在服务端启动日志中均显示 `Mixing ... into net.minecraft.entity.player.EntityPlayer / ServerConfigurationManager / WorldProvider` 且无 `InvalidInjectionException`；refmap 已生成 `func_71056_a`（`verifyRespawnCoordinates`）与 `func_72368_a`（`respawnPlayer`）映射。客户端渲染实测：平地上 charges=0..4 五个方块各自命中 `charges=N` 模型、图案/发光点随充能递进，快捷栏图标的等距 3D 模型正常。**未做**：真实玩家的「设点 → 死亡 → 重生 / 召回药水」全流程实测。
+- 扭曲恩惠药水：服务端探针（真实 `EntityPlayerMP` + 七咒之戒）验证诅咒门槛、旧/新两种 `LastDeathLocation` 格式、跨维度传送与血量置 1 全部符合预期；`NBTTagCompound` 单测确认修复前 `getInteger` 读字符串维度恒为 0、`(CompoundTag)` 强转反序列化标签抛 `ClassCastException`。**未做**：真实玩家的「死亡 → 重登 → 喝药」完整流程与饮用动画实测。
 - 客户端：书籍 GUI、引言字幕、永久掉落物（钻石）与 3D 凋灵头颅渲染截图验证通过，无崩溃。
 - 临时验证探针（`PortSmokeTest`、`RenderProbe`）已删除。

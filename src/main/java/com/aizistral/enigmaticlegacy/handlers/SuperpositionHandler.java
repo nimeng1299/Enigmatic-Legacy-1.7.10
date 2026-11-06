@@ -1056,9 +1056,14 @@ public class SuperpositionHandler {
     }
 
     public static void sendToDimension(EntityPlayerMP player, int dimension, Object teleporter) {
-        if (player.dimension != dimension) {
-            player.travelToDimension(dimension);
-        }
+        if (player.dimension == dimension) return;
+
+        // 1.20 checks that the target level exists before handing it to changeDimension; a death
+        // location restored from a world where the dimension was since removed must not blow up
+        // travelToDimension().
+        if (MinecraftServer.getServer() == null || SuperpositionHandler.getWorld(dimension) == null) return;
+
+        player.travelToDimension(dimension);
     }
 
     public static void sendToDimension(EntityPlayerMP player, int dimension) {
