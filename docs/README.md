@@ -23,3 +23,4 @@ Whatever fate your advent will bring upon this forgotten land.
 # 未实现内容
 
 * 创造之心
+* 所有能加饰品位的饰品都不能加饰品位
