@@ -309,6 +309,7 @@
 
 - 诅咒之环完整进度（诅咒阶段、梦魇、特殊掉落联动）。
 - 死亡确认 / 永久死亡 / 复活 / Soul Archive 回收流程。
+- 被诅咒者的寻路指针：服务端链路（`SoulArchive` → `updateSoulCompass` → `PacketUpdateCompass` → `setNearestCrystal`）本来就完整，缺的是指针动画——1.20 用 `angle` item property 在 32 个模型间切换，1.7.10 改成注册 32 个 IIcon 帧、由 `getIconIndex`/`getIcon` 按当前角度取帧（帧选择公式已按 1.20 的 33 条 model override 逐桶核对，全部命中；客户端启动确认 32 张 `textures/items/item/compass_*.png` 全部注册成功、无缺失纹理）。**未做**：游戏内「戴七咒之戒 → 丢灵魂水晶 → 指针指过去」的观感与抖动验证（不戴戒指时指针应当是随机乱转，这是 1.20 的行为）。
 - 引言播放时序（音乐延迟、字幕淡入淡出）与全部 28 段引言触发点。
 - 酿造边界情况（多槽同时酿造、普通/喷溅/滞留转换）。
 - 磁铁戒指、末影戒指、法术石等饰品的实际交互。
