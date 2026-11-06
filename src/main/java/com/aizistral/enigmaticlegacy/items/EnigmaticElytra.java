@@ -7,9 +7,9 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.api.items.IBindable;
 import com.aizistral.enigmaticlegacy.compat.Attribute;
 import com.aizistral.enigmaticlegacy.compat.AttributeModifier;
@@ -25,14 +25,26 @@ import com.google.common.collect.Multimap;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import ganymedes01.etfuturum.api.elytra.IElytraPlayer;
+import ganymedes01.etfuturum.items.equipment.ItemArmorElytra;
 
+/**
+ * The gliding itself is not implemented here: 1.7.10 has no elytra, and the mod that backports one
+ * is Et Futurum Requiem. Its whole pipeline - takeoff on jump, flight physics, wing rendering,
+ * cape hiding and the per-20-ticks durability drain - keys off
+ * {@code ItemArmorElytra#getElytra(entity)}, which {@code MixinEtFuturumElytra} answers with this
+ * item when it is worn. What remains here is the mid-air boost (1.20
+ * {@code EnigmaticElytra#boostPlayer}) that replaces the firework rocket.
+ */
 public class EnigmaticElytra extends ItemBaseCurio implements IBindable {
 
-    private static final AttributeModifier ELYTRA_MODIFIER = new AttributeModifier(
-        UUID.fromString("44dfce5a-2f09-4f19-bc29-9b0324cd2a40"),
-        EnigmaticLegacy.MODID + ":elytra_modifier",
-        1.0,
-        AttributeModifier.Operation.ADDITION);
+    /**
+     * Look-vector acceleration used by 1.20 {@code boostPlayer}: a mix of a constant push and a
+     * pull towards 1.5 blocks per tick along the view direction.
+     */
+    private static final double BOOST_ACCEL = 0.1D;
+    private static final double BOOST_TARGET = 1.5D;
+    private static final double BOOST_BLEND = 0.5D;
 
     public EnigmaticElytra() {
         super(
@@ -57,22 +69,6 @@ public class EnigmaticElytra extends ItemBaseCurio implements IBindable {
     }
 
     @Override
-    public void curioTick(SlotContext context, ItemStack stack) {
-        EntityLivingBase entity = context.entity();
-
-        if (entity instanceof EntityPlayer && !entity.worldObj.isRemote && !entity.onGround && !entity.isInWater()) {
-            if (entity.motionY < -0.18) {
-                entity.motionY = -0.18;
-                entity.fallDistance = 0F;
-            }
-
-            if (entity.ticksExisted % 20 == 0 && entity.motionY < -0.05) {
-                stack.damageItem(1, entity);
-            }
-        }
-    }
-
-    @Override
     public Multimap<Attribute, AttributeModifier> getAttributeModifiers(SlotContext slotContext, UUID uuid,
         ItemStack stack) {
         return HashMultimap.create();
@@ -83,12 +79,39 @@ public class EnigmaticElytra extends ItemBaseCurio implements IBindable {
         return material != null && material.getItem() == EnigmaticItems.ETHERIUM_INGOT;
     }
 
-    public boolean canElytraFly(ItemStack stack, EntityLivingBase entity) {
-        return entity instanceof EntityPlayer;
+    /**
+     * Equivalent of 1.20 {@code EnigmaticElytra#boostPlayer}. Adds the impulse in place, so it runs
+     * on the client for the wearer and on the server for everyone else reading the synced
+     * {@code TransientPlayerData} flag.
+     */
+    public static boolean boostPlayer(EntityPlayer player) {
+        if (!isFallFlying(player)) return false;
+
+        Vec3 look = player.getLookVec();
+
+        player.motionX += look.xCoord * BOOST_ACCEL + (look.xCoord * BOOST_TARGET - player.motionX) * BOOST_BLEND;
+        player.motionY += look.yCoord * BOOST_ACCEL + (look.yCoord * BOOST_TARGET - player.motionY) * BOOST_BLEND;
+        player.motionZ += look.zCoord * BOOST_ACCEL + (look.zCoord * BOOST_TARGET - player.motionZ) * BOOST_BLEND;
+
+        return true;
     }
 
-    public boolean elytraFlightTick(ItemStack stack, EntityLivingBase entity, int flightTicks) {
-        return entity instanceof EntityPlayer;
+    /**
+     * 1.20 counterpart is {@code LivingEntity#isFallFlying}.
+     */
+    public static boolean isFallFlying(EntityLivingBase entity) {
+        return entity instanceof IElytraPlayer && ((IElytraPlayer) entity).etfu$isElytraFlying();
+    }
+
+    /**
+     * The elytra Et Futurum resolves for this entity, but only if it is this item - same precedence
+     * as {@code ItemArmorElytra#getElytra}, where a real Et Futurum elytra wins over the bauble.
+     * Used by the wing layer so it does not draw over a vanilla elytra.
+     */
+    public static ItemStack getActiveElytra(EntityLivingBase entity) {
+        ItemStack resolved = ItemArmorElytra.getElytra(entity);
+
+        return resolved != null && resolved.getItem() == EnigmaticItems.ENIGMATIC_ELYTRA ? resolved : null;
     }
 
 }

@@ -109,6 +109,7 @@ import com.aizistral.enigmaticlegacy.items.EldritchPan;
 import com.aizistral.enigmaticlegacy.items.EnderSlayer;
 import com.aizistral.enigmaticlegacy.items.EnigmaticAmulet;
 import com.aizistral.enigmaticlegacy.items.EnigmaticAmulet.AmuletColor;
+import com.aizistral.enigmaticlegacy.items.EnigmaticElytra;
 import com.aizistral.enigmaticlegacy.items.EyeOfNebula;
 import com.aizistral.enigmaticlegacy.items.ForbiddenAxe;
 import com.aizistral.enigmaticlegacy.items.ForbiddenFruit;
@@ -501,6 +502,19 @@ public class EnigmaticEventHandler {
             counter.incrementTimeWithCurses();
         } else {
             counter.incrementTimeWithoutCurses();
+        }
+
+        // 1.20 EnigmaticElytra#onPlayerTick: keep pushing boosting players forward and pay the extra
+        // durability on top of the per-20-ticks glide drain Et Futurum already applies.
+        if (TransientPlayerData.get(player)
+            .isElytraBoosting()) {
+            EnigmaticElytra.boostPlayer(player);
+
+            ItemStack elytra = SuperpositionHandler.getEnigmaticElytra(player);
+
+            if (elytra != null && elytra.getItem() == EnigmaticItems.ENIGMATIC_ELYTRA && player.ticksExisted % 5 == 0) {
+                elytra.damageItem(1, player);
+            }
         }
 
         if (SuperpositionHandler.hasCurio(player, EnigmaticItems.DESOLATION_RING)

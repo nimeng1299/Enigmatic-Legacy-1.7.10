@@ -43,6 +43,13 @@ public class ClientProxy extends CommonProxy {
             .bus()
             .register(new com.aizistral.enigmaticlegacy.handlers.EnigmaticKeybindHandler());
 
+        cpw.mods.fml.common.FMLCommonHandler.instance()
+            .bus()
+            .register(new com.aizistral.enigmaticlegacy.client.EnigmaticElytraHandler());
+
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS
+            .register(new com.aizistral.enigmaticlegacy.client.renderers.EnigmaticElytraLayer());
+
         net.minecraftforge.common.MinecraftForge.EVENT_BUS
             .register(new com.aizistral.enigmaticlegacy.client.gui.InventoryButtons());
 

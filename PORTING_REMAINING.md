@@ -95,11 +95,13 @@
 
 ## 二、渲染 / 外观
 
-### 9. EnigmaticElytraLayer — 未实现
+### 9. EnigmaticElytraLayer — 已实现
 
 1.20 通过渲染层在玩家模型上叠加鞘翅翅膀（纹理 `textures/models/misc/elytra.png`），同时 `renderCape` 事件取消原版披风显示。
 
-现状：物品功能（飞行/滑翔）已移植，但**没有任何翅膀外观**，且佩戴者仍显示原版披风。
+现状：翅膀由 `client/renderers/EnigmaticElytraLayer` 在 `RenderPlayerEvent.Specials.Post` 上绘制，复用 Et Futurum 的 `ModelElytra` 并绑 mod 自己的 `textures/models/misc/elytra.png`；Et Futurum 自带那层用 `MixinEtFuturumElytraLayer` 对该物品取消（它在本物品上会优先用玩家披风贴图，画出来是错的）。披风隐藏不需要额外代码：Et Futurum 的 `tickElytra` 只要 `getElytra` 认这个物品就会 `setHideCape(1, true)`。**未做**：附魔光效（1.20 通过 `getArmorFoilBuffer` 的 foil 参数实现）。
+
+滑翔功能本身：1.7.10 没有鞘翅，实现完全落在 Et Futurum（Backlytra 移植）里，起飞、飞行物理、耐久每 20 tick 损耗都挂在 `ItemArmorElytra#getElytra` 上。`MixinEtFuturumElytra` 让该方法对本物品返回饰品栏/胸甲栏里的壮丽鞘翅，`MixinEtFuturumElytraTakeoff` 补上它 `instanceof ItemArmorElytra` 的起飞校验；跳跃加速（1.20 `boostPlayer`）与推进粒子由 `items/EnigmaticElytra` + `client/EnigmaticElytraHandler` + `EnigmaticEventHandler#onPlayerTick` 实现，推进期间额外每 5 tick 扣 1 点耐久。
 
 ### 10. ShieldAuraLayer — 未实现
 
@@ -318,6 +320,7 @@
 - 附魔师的珍珠：双次附魔、原版与 Et Futurum 两条附魔台路径均只做了注入应用验证（强制加载两个 `ContainerEnchantment`，`require = 1` 下无注入错误），未在游戏内实际附魔比对结果数量/等级。
 - 行刑者之斧：斩首概率公式与骷髅/凋灵骷髅/僵尸/苦力怕四条分支只做了静态核对；tooltip 新增的饰品抢夺加成、僵尸村民排除均未做游戏内验证。
 - 以太套装：护盾的投射物免疫、近战减伤、击退与音效只做了静态核对；新增的 `ShieldAuraLayer` 光晕渲染未做游戏内视觉验证（1.7.10 用 `RenderPlayerEvent.Specials.Post` + GL 复刻，无法在无头环境确认实际观感）。
+- 壮丽鞘翅：`MixinEtFuturumElytra` / `MixinEtFuturumElytraTakeoff` 已由客户端启动日志确认注入成功（`Mixing ... into ganymedes01.etfuturum.items.equipment.ItemArmorElytra` / `...network.StartElytraFlyingHandler`），但「空手跳→起飞→按住跳跃加速→落地」整条链未在游戏内跑过；`MixinEtFuturumElytraLayer` 目标类只在渲染玩家时加载，翅膀贴图/裁剪同样未经肉眼确认。
 
 ---
 
@@ -329,7 +332,7 @@
 4. 经验掉落修正（Mixin）。
 5. 引言触发（凋灵/末影龙召唤、末地门）。
 6. Toast 队列渲染。
-7. 鞘翅翅膀、护盾光环、铭牌/披风、熔岩雾效。
+7. ~~鞘翅翅膀~~ — 已完成；护盾光环、铭牌/披风、熔岩雾效仍待做。
 8. 附魔台诅咒加成。
 9. 书籍配方预览与已读状态。
 10. NEI 隐藏过滤与更新检查（可选）。

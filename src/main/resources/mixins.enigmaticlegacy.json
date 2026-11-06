@@ -13,6 +13,8 @@
         "MixinEnchantmentHelper",
         "MixinEntityCreature",
         "MixinEtFuturumContainerEnchantment",
+        "MixinEtFuturumElytra",
+        "MixinEtFuturumElytraTakeoff",
         "MixinEntityLivingBase",
         "MixinEntityPlayer",
         "MixinEntityPlayerArmor",
@@ -30,6 +32,7 @@
         "MixinWorldProvider"
     ],
     "client": [
+        "MixinEtFuturumElytraLayer",
         "MixinPlayerControllerMP"
     ],
     "server": []
