@@ -10,7 +10,7 @@
 
 ## 一、玩法系统
 
-### 1. 特殊战利品注入 — 未实现（高优先级）
+### 1. 特殊战利品注入 — 部分实现（高优先级）
 
 1.20 通过全局战利品修正器 `objects/SpecialLootModifier` 实现以下一次性奖励：
 
@@ -18,10 +18,12 @@
 | --- | --- | --- |
 | Architect Eye（`ENIGMATIC_EYE`） | 玩家第一次打开任意原版箱子（持久标记 `LootedArchitectEye`） | 可做 |
 | Ichor Bottle | 每人仅能获得一次（持久标记 `LootedIchorBottle`），重复生成时移除 | 可做 |
-| Astral Fruit | 诅咒玩家第一次打开末地城宝箱（持久标记 `LootedFirstEndCityChest`） | 有限支持（无结构战利品表，需按维度/坐标近似判定） |
+| Astral Fruit | 诅咒玩家第一次打开末地城宝箱（持久标记 `LootedFirstEndCityChest`） | **已实现**（`MixinEntityPlayerMP` 拦截 `displayGUIChest` + `SpecialLootModifier#onChestOpened`；1.7.10 无末地城，按「末地维度内的任意箱子方块」近似） |
 | Heart of the Earth | 考古可疑方块 3%（`CustomLoot.EarthHeartChance`）；同时以权重 7 注入上世界地牢宝箱 | 地牢宝箱途径**已实现**（`ChestGenHooks`）；考古平台不适用（1.7.10 无考古系统） |
 
-现状：`objects/SpecialLootModifier` 只保留了配置项，`registries/EnigmaticLootModifiers` 仅实现了 Earth Heart 一项；**Earth Heart 的地牢宝箱注入已实现**（`EnigmaticLootModifiers.register()`，六类地牢宝箱，权重 7，受 `CustomDungeonLootEnabled` 与 `EarthHeartEnabled` 控制），其余三项（Architect Eye / Ichor Bottle / Astral Fruit）**没有任何战利品注入逻辑**。
+现状：`objects/SpecialLootModifier` 只保留了配置项，`registries/EnigmaticLootModifiers` 仅实现了 Earth Heart 一项；**Earth Heart 的地牢宝箱注入已实现**（`EnigmaticLootModifiers.register()`，六类地牢宝箱，权重 7，受 `CustomDungeonLootEnabled` 与 `EarthHeartEnabled` 控制），其余两项（Architect Eye / Ichor Bottle）**没有任何战利品注入逻辑**。
+
+补充：**Astral Fruit 已实现**。1.7.10 在结构生成时就滚好箱子内容，没有可挂接的"开箱时"战利品表，因此改由 `mixin/MixinEntityPlayerMP` 在服务端 `EntityPlayerMP#displayGUIChest` 的 HEAD 处调用 `objects/SpecialLootModifier#onChestOpened`：仅当目标为 `TileEntityChest`（末影箱不计）、位于末地（dimension 1）、且玩家佩戴七咒之戒时，向箱子空位放入一个天体果实并写入持久标记 `LootedFirstEndCityChest`。与 1.20 的差异：标记只在果实真正放入后消费（未戴戒指开箱不会浪费这次机会）；1.7.10 无末地城，任何末地箱子都算，玩家自建箱子同样会触发。
 
 补充：1.20 主世界地牢 `epic` 池中的**铁指环（权重 20）已补齐**（同一 `EnigmaticLootModifiers.register()`，受 `CustomDungeonLootEnabled` 与 `IronRingEnabled` 双重控制）；同池的磁铁戒指、急迫药水、抄录笔、铁工具与杂项物品仍未注入。
 
@@ -309,6 +311,7 @@
 - 酿造边界情况（多槽同时酿造、普通/喷溅/滞留转换）。
 - 磁铁戒指、末影戒指、法术石等饰品的实际交互。
 - 怪物猎人勋章四项效果链的端到端游戏内验证（伤害倍率、双倍经验、+1 抢夺与斩首概率）；目前只做了调用链静态核对与启动冒烟。
+- 天体果实的一次性获取：`MixinEntityPlayerMP` 注入点已确认写入 refmap（`displayGUIChest` → `func_71007_a`）且服务端启动无注入错误，但未在游戏内实际「戴戒进入末地开箱」验证。
 - 猎宝者护符的触及距离：已验证双端 mixin 均能正常应用（服务端探针调用 `ItemInWorldManager#getBlockReachDistance` 返回 5.0，客户端 `PlayerControllerMP` 加载无异常），但未做「佩戴护符后实际挖/放到 7 格」的游戏内实测。
 - 血战沙场之证的四项效果：攻击伤害与伤害抗性走 `EnigmaticEventHandler#onEntityHurt`（静态核对已闭合），移动速度走 `AttributeMap`（1.7.10 属性系统本身可用），攻击速度改为缩短受击无敌帧（公式 `max/2 + (max/2)/(1+加成)`）；四者均未做游戏内数值实测。
 - 精美戒指的 +1 幸运：已验证注入能正常应用（服务端强制加载 `EnchantmentHelper`/`EntityFishHook` 无异常），但未做「戴戒指钓鱼，统计垃圾/宝藏比例」的游戏内实测。
@@ -322,7 +325,7 @@
 
 1. 末影珍珠伤害免疫（改动最小，立即可做）。
 2. ~~深渊之心龙掉落 + `WITH_DRAGONS` 引言~~ — 已完成。
-3. 特殊战利品注入（Architect Eye / Ichor Bottle / Astral Fruit）。
+3. ~~特殊战利品注入（Astral Fruit）~~ — 已完成；Architect Eye / Ichor Bottle 仍待做。
 4. 经验掉落修正（Mixin）。
 5. 引言触发（凋灵/末影龙召唤、末地门）。
 6. Toast 队列渲染。

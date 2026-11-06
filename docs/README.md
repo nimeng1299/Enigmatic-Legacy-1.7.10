@@ -18,6 +18,7 @@ Whatever fate your advent will bring upon this forgotten land.
 * 禁忌之果也能从巫妖高塔的战利品箱子中获得
 * 海洋意志也能从极光宫殿的战利品箱子中获得
 * 烈焰核心也能从牛头人迷宫的战利品箱子中获得
+* 天体果实只要在末地开箱就能获得，不管是不是手动放的
 
 # 未实现内容
 
