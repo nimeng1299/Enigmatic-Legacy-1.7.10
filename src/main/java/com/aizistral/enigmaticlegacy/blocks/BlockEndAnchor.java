@@ -19,6 +19,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.aizistral.enigmaticlegacy.items.EndAnchor;
+import com.gtnewhorizon.gtnhlib.blockstate.properties.IntegerBlockProperty;
+import com.gtnewhorizon.gtnhlib.client.model.ModelISBRH;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -30,6 +32,9 @@ public class BlockEndAnchor extends Block {
 
     public static final int MIN_CHARGES = 0;
     public static final int MAX_CHARGES = 4;
+
+    /** Metadata 0-4, exposed to the JSON model pipeline as the {@code charges} blockstate property. */
+    public static final IntegerBlockProperty CHARGES = IntegerBlockProperty.meta("charges");
 
     /**
      * Horizontal offsets around the anchor, in the same order the 1.20 version walks them
@@ -344,6 +349,17 @@ public class BlockEndAnchor extends Block {
     @Override
     public boolean renderAsNormalBlock() {
         return false;
+    }
+
+    /**
+     * The anchor is a multi-element JSON model (base frame plus the glowing inner rim), one model
+     * per charge level, so it has to go through GTNHLib's model ISBRH instead of the legacy IIcon
+     * cube renderer.
+     */
+    @Override
+    @SideOnly(Side.CLIENT)
+    public int getRenderType() {
+        return ModelISBRH.JSON_ISBRH_ID;
     }
 
 }

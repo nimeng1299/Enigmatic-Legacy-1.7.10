@@ -101,7 +101,7 @@ public class EnigmaticBlocks extends AbstractRegistry<Block> {
         BlockPropertyRegistry.registerBlockItemProperty(BIG_SHROOMLAMP, BlockBigLamp.HANGING, false);
         BlockPropertyRegistry.registerBlockItemProperty(BIG_REDSTONELAMP, BlockBigLamp.HANGING, false);
         BlockPropertyRegistry.registerBlockItemProperty(COSMIC_CAKE, IntegerBlockProperty.meta("bites"), 0);
-        BlockPropertyRegistry.registerBlockItemProperty(END_ANCHOR, IntegerBlockProperty.meta("charges"), 0);
+        BlockPropertyRegistry.registerBlockItemProperty(END_ANCHOR, BlockEndAnchor.CHARGES, 0);
     }
 
     protected void register(String name, Supplier<Block> blockSupplier, BlockItemSupplier itemSupplier) {

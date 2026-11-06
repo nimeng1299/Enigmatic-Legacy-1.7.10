@@ -280,7 +280,9 @@
 
     **顺带对齐的细节**：光照值与比较器输出统一取 floor（`getScaledChargeLevel`，1.20 同式）；破坏方块只掉白板物品、不再随元数据保留充能（1.20 `getDrops` 行为）。
 
-    **已知未做 / 保留的差异**：① 外观——`blockstates/end_anchor.json`、`models/block/end_anchor_0..4.json` 与 `BlockPropertyRegistry.registerBlockItemProperty(END_ANCHOR, IntegerBlockProperty.meta("charges"))` 都已就位，但 `BlockEndAnchor#getRenderType()` 未返回 `ModelISBRH.JSON_ISBRH_ID`，方块仍用 IIcon 立方体渲染；`TileEndAnchor` 也从未被实例化（未实现 `ITileEntityProvider`）。切换需要客户端实测，本次未动。② 1.7.10 版保留了 1.20/原版都没有的「邻接水时爆炸」（`onNeighborBlockChange`），未做改动。
+    **渲染**：`blockstates/end_anchor.json`（`charges=0..4`）×`models/block/end_anchor_0..4.json` 走的 GTNHLib JSON 模型管线原本是死的——`BlockEndAnchor#getRenderType()` 没返回 `ModelISBRH.JSON_ISBRH_ID`，方块一直用 IIcon 画成一个贴了 64×64 图集的实心立方体（图案缩在角落）。现补上 `getRenderType()`，并把 `IntegerBlockProperty.meta("charges")` 提成 `BlockEndAnchor.CHARGES` 常量复用注册；方块按 5 档充能正确切换模型，物品栏图标也变成等距 3D 模型（GTNHLib 直接把 block 模型用于 ItemBlock）。客户端实测日志确认 `selectModel: state=enigmaticlegacy:end_anchor[charges=N] matched variant 'charges=N'`（N=0..4 全部命中），截图见 `run/client/screenshots/anchor_probe_front.png`。
+
+    **保留的差异**：1.7.10 版保留了 1.20/原版都没有的「邻接水时爆炸」（`onNeighborBlockChange`），未做改动。
 
 ---
 
@@ -323,6 +325,6 @@
 - `./gradlew spotlessApply build` 通过，产物：`build/libs/enigmaticlegacy-*.jar`（约 7.6 MB，448 个模组类 + Mixin 配置）。
 - 服务端冒烟测试：注册表空字段 0/0，5 个法术石，392 条配方（58 条产出本模组物品），Baubles API/饰品判定 true，自定义酿造（粗制 + 石英 → 迅捷）与原版酿造（粗制 + 金胡萝卜 → 夜视）均 PASS。
 - 末影龙深渊之心：`MixinEntityDragon` 应用成功（`IAbyssalHeartBearer` 可赋值），心以 `PermanentItemEntity` 生成、owner 绑定与 `AbyssalHeartsGained` 计数正确（详见第 8 条）。
-- 维度锚：`MixinEntityPlayerSpawn` / `MixinServerConfigurationManager` / `MixinWorldProvider` 在服务端启动日志中均显示 `Mixing ... into net.minecraft.entity.player.EntityPlayer / ServerConfigurationManager / WorldProvider` 且无 `InvalidInjectionException`；refmap 已生成 `func_71056_a`（`verifyRespawnCoordinates`）与 `func_72368_a`（`respawnPlayer`）映射。**未做**：真实玩家的「设点 → 死亡 → 重生 / 召回药水」全流程实测。
+- 维度锚：`MixinEntityPlayerSpawn` / `MixinServerConfigurationManager` / `MixinWorldProvider` 在服务端启动日志中均显示 `Mixing ... into net.minecraft.entity.player.EntityPlayer / ServerConfigurationManager / WorldProvider` 且无 `InvalidInjectionException`；refmap 已生成 `func_71056_a`（`verifyRespawnCoordinates`）与 `func_72368_a`（`respawnPlayer`）映射。客户端渲染实测：平地上 charges=0..4 五个方块各自命中 `charges=N` 模型、图案/发光点随充能递进，快捷栏图标的等距 3D 模型正常。**未做**：真实玩家的「设点 → 死亡 → 重生 / 召回药水」全流程实测。
 - 客户端：书籍 GUI、引言字幕、永久掉落物（钻石）与 3D 凋灵头颅渲染截图验证通过，无崩溃。
 - 临时验证探针（`PortSmokeTest`、`RenderProbe`）已删除。
