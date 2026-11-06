@@ -17,13 +17,16 @@
         "MixinEntityPlayer",
         "MixinEntityPlayerArmor",
         "MixinEntityPlayerKnockback",
+        "MixinEntityPlayerSpawn",
         "MixinEntityVillager",
         "MixinItemInWorldManager",
         "MixinItemInWorldManagerAccessor",
         "MixinPotionEffect",
         "MixinPotionHelper",
+        "MixinServerConfigurationManager",
         "MixinTileEntityBrewingStand",
-        "MixinWeightedRandomChestContent"
+        "MixinWeightedRandomChestContent",
+        "MixinWorldProvider"
     ],
     "client": [
         "MixinPlayerControllerMP"

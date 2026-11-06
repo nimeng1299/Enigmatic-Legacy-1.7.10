@@ -5,17 +5,107 @@ import java.util.Random;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.WorldServer;
 
+import com.aizistral.enigmaticlegacy.blocks.BlockEndAnchor;
+import com.aizistral.enigmaticlegacy.items.EndAnchor;
+import com.aizistral.enigmaticlegacy.objects.AnchorSearchResult;
 import com.gtnewhorizon.gtnhlib.blockpos.BlockPos;
 
 public class AdvancedSpawnLocationHelper {
 
+    /**
+     * Dimensions 1.7.10 can enumerate spawn points for. The port keeps one spawn point per
+     * dimension instead of the single one 1.20 has, and the map holding the non-overworld ones
+     * is private with no public accessor, so the vanilla dimensions are probed directly.
+     */
+    private static final int[] SPAWN_DIMENSIONS = { 0, -1, 1 };
+
+    /**
+     * 1.20 counterpart: {@code player.getRespawnDimension()}, i.e. the dimension stored together
+     * with the player's respawn point. Here the current dimension wins if it holds a spawn point
+     * at all; otherwise a dimension with a usable Dimensional Anchor is preferred over the plain
+     * overworld fallback used before.
+     */
     public static int getPlayerRespawnDimension(EntityPlayerMP player) {
-        return player.dimension;
+        if (player.getBedLocation(player.dimension) != null) return player.dimension;
+
+        int anchorDimension = findEndAnchorSpawnDimension(player);
+
+        if (anchorDimension != Integer.MIN_VALUE) return anchorDimension;
+
+        return 0;
+    }
+
+    /**
+     * @return the dimension the player has a charged Dimensional Anchor registered in as their
+     *         respawn point, or {@link Integer#MIN_VALUE} if there is none.
+     */
+    public static int findEndAnchorSpawnDimension(EntityPlayerMP player) {
+        MinecraftServer server = MinecraftServer.getServer();
+
+        if (server == null) return Integer.MIN_VALUE;
+
+        for (int dimension : SPAWN_DIMENSIONS) {
+            ChunkCoordinates spawn = player.getBedLocation(dimension);
+
+            if (spawn == null) continue;
+
+            WorldServer world = server.worldServerForDimension(dimension);
+
+            if (world == null || !isUsableEndAnchor(world, spawn)) continue;
+
+            return dimension;
+        }
+
+        return Integer.MIN_VALUE;
+    }
+
+    /**
+     * Whether the block at the given spawn point is a charged Dimensional Anchor that is allowed
+     * to work in its dimension.
+     */
+    public static boolean isUsableEndAnchor(WorldServer world, @Nullable ChunkCoordinates pos) {
+        if (world == null || pos == null) return false;
+
+        Block block = world.getBlock(pos.posX, pos.posY, pos.posZ);
+
+        if (!(block instanceof BlockEndAnchor)) return false;
+        if (world.getBlockMetadata(pos.posX, pos.posY, pos.posZ) <= 0) return false;
+
+        return BlockEndAnchor.canSetSpawn(world);
+    }
+
+    /**
+     * Retrieves the player respawn location the 1.20 way: for a Dimensional Anchor this is the
+     * stand-up position next to it, and a charge is spent unless {@code ChargeSaveChance} saves
+     * it. Bed (or any other) spawn points keep the previous top-of-column behaviour.
+     */
+    public static Optional<Vec3> getValidSpawn(final WorldServer world, final EntityPlayerMP player) {
+        if (world == null) return Optional.empty();
+
+        int dimension = world.provider.dimensionId;
+        ChunkCoordinates spawn = player.getBedLocation(dimension);
+
+        if (spawn == null) return Optional.empty();
+
+        if (isUsableEndAnchor(world, spawn)) {
+            AnchorSearchResult result = EndAnchor.findAndUseEndAnchor(
+                world,
+                new BlockPos(spawn.posX, spawn.posY, spawn.posZ),
+                0.0F,
+                player.isSpawnForced(dimension),
+                false);
+            return result.location();
+        }
+
+        int y = world.getTopSolidOrLiquidBlock(spawn.posX, spawn.posZ);
+        return Optional.of(Vec3.createVectorHelper(spawn.posX + 0.5D, y, spawn.posZ + 0.5D));
     }
 
     public static BlockPos getRespawnLocation(WorldServer world, int x, int z, boolean flag) {
@@ -52,20 +142,6 @@ public class AdvancedSpawnLocationHelper {
         while (!worldIn.checkNoEntityCollision(playerIn.boundingBox) && playerIn.posY < 256.0D) {
             playerIn.setPositionAndUpdate(playerIn.posX, playerIn.posY + 1.0D, playerIn.posZ);
         }
-    }
-
-    /**
-     * Retrieves the player respawn location.
-     */
-    public static Optional<Vec3> getValidSpawn(final WorldServer world, final EntityPlayerMP player) {
-        ChunkCoordinates blockpos = player.getBedLocation(player.dimension);
-
-        if (world != null && blockpos != null) {
-            int y = world.getTopSolidOrLiquidBlock(blockpos.posX, blockpos.posZ);
-            return Optional.of(Vec3.createVectorHelper(blockpos.posX + 0.5D, y, blockpos.posZ + 0.5D));
-        }
-
-        return Optional.empty();
     }
 
     @Nullable

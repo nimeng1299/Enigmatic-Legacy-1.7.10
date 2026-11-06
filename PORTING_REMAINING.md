@@ -183,8 +183,8 @@
 | `MixinCrossbowItem` | 弩的特殊弹药处理 | 平台不适用（1.7.10 无弩） |
 | `MixinEntityRenderer` | 自定义铭牌显示规则 | 未实现，见第 11 条 |
 | `MixinItemStack` | 按玩家自定义物品显示名称 | 未实现 |
-| `MixinLivingEntity` / `MixinPlayer` | 盾牌不可被斧禁用、末地锚重生逻辑 | 1.7.10 盾牌机制不同；末地锚已通过 Block 设置重生点，行为近似 |
-| `MixinPlayerList` | 自定义重生处理 | 未实现（1.7.10 无对应事件） |
+| `MixinLivingEntity` / `MixinPlayer` | 盾牌不可被斧禁用、末地锚重生逻辑 | 盾牌机制不同（跳过）；末地锚重生**已实现**，见 `MixinEntityPlayerSpawn` |
+| `MixinPlayerList` | 自定义重生处理 | **已实现**（改为 `MixinServerConfigurationManager` + `MixinWorldProvider`，见第 21 条） |
 | `MixinMobEffect` | 药水效果 tick 修改 | 未实现 |
 | `MixinVillager` / `MixinVillagerEntity` / `MixinHoglinTasks` / `MixinPiglinTasks` / `MixinPhantomSpawner` / `MixinShulker` | 生物 AI、交易价格、生成调整 | 大多为 1.20 生物/机制，1.7.10 无对应实体（猪灵、幻翼、潜影贝） |
 | `MixinStarterGear` | 首次登录发放新手装备 | **已实现**（登录事件，日志可见 “Granting starter gear”） |
@@ -254,6 +254,34 @@
 
     **实测**（服务端探针，反射调用判定方法；世界数据取自用户存档副本）：真实死亡点 `-74,31,52` → `true`、`-71,31,54` → `true`；合成用例 `3×3×4`（36 格）→ `false`、`7×7×2`（98 格）→ `false`、`1×1×8`（8 格）→ `false`、`5×5×4`（100 格）→ `true`。更早一轮的人工 15×15×5 熔岩湖 → `true`，上方 7×7 内封顶一块石头 → `false`（该条随判定改写已不再检查「上方必须空旷」，见上段）。效果链另行验证（FakePlayer + 反射直调 `handleCursedStoneRitual`）：戴七咒之戒时调用后 `hasCurio=false`、失落灵魂水晶 `0→1`、`DestroyedCursedRing=true`。**未做**：改判定后的真实玩家全流程实测（下一次进游戏复测）。
 
+21. **维度锚（End Anchor）**：对照 1.20 `BlockEndAnchor` / `TileEndAnchor` / `EndAnchor` / `MixinPlayer` / `MixinPlayerList` 逐条核对后补齐。移植前该方块只有「充能 + 写入重生点」两半，重生链路整体是断的：
+
+    | 1.20 效果 | 移植前状态 |
+    | --- | --- |
+    | 在任意（非黑名单）维度以维度锚重生 | **完全不可用** |
+    | 重生时消耗 1 点充能（`ChargeSaveChance` 可豁免）并播放耗尽音效 | 未实现（无调用点） |
+    | 死亡维度无重生点时，回到维度锚所在维度 | 未实现 |
+    | 重生/召回时搜索锚周围的安全落点（8 邻列 + 上方） | 未实现（固定 `pos + 1`） |
+    | 召回药水 / 扭曲之镜 / 逃脱卷轴回到维度锚并消耗充能 | 未实现（会把玩家塞进方块里） |
+    | 发射器把末影珍珠打进维度锚完成充能 | 未实现 |
+    | `EndAnchorDimensionBlacklist` 生效 | **失效**（`ResourceLocation` 与 int 维度 id 比较，恒 false） |
+
+    **重生为什么完全不可用**：1.7.10 的 `EntityPlayer.verifyRespawnCoordinates` 只认床，维度锚是实心方块（`Material.rock`），即使 `spawnForced` 也过不了「两格非固体」判定 → 返回 null → 客户端收到「床被阻挡」并在世界出生点重生。新增 `MixinEntityPlayerSpawn` 注入该静态方法：方块是充能维度锚且 `canSetSpawn` 成立时返回 `findStandUpPosition` 的结果，并经由 `EndAnchor.findAndUseEndAnchor` 消耗充能（`random.fizz` 作为 1.7.10 没有的 `RESPAWN_ANCHOR_DEPLETE` 替代）。`verifyRespawnCoordinates` 只被 `ServerConfigurationManager#respawnPlayer` 调用，与 1.20 的注入点语义等价。
+
+    **末地/下界重生**：1.7.10 的 `WorldProviderEnd`、`WorldProviderHell` 的 `canRespawnHere()` 恒为 false，`respawnPlayer` 随即用 `getRespawnDimension()`（恒返回 0）把维度改写为上世界——这正是维度锚在 1.20 要解决的问题。新增 `MixinWorldProvider`（`remap = false`，该方法是 Forge 补丁方法、不在混淆表内）：当该维度确实存有玩家的充能维度锚重生点时返回自身维度 id，其余情况原样返回。
+
+    **跨维度重生**：`MixinServerConfigurationManager` 在 `respawnPlayer` 头部判断「死亡维度没有重生点 + 别处有维度锚重生点」，成立时以锚所在维度**递归重入一次** `respawnPlayer`；第二趟因该维度已有重生点直接落到原版流程，因此不需要重写 1.20 `MixinPlayerList` 那套 80 行的玩家重建/发包逻辑。`conqueredEnd`（穿过末地传送门返回）时直接跳过，保证玩家仍能正常离开末地。
+
+    **安全落点 / 召回**：`BlockEndAnchor.findStandUpPosition` 复刻 1.20 的 `RESPAWN_OFFSETS` 搜索顺序（正上方 → 8 个相邻列，各试 +1、+2 层，要求脚下固体、两格净空），`EndAnchor.findEndAnchor` 不再硬编码 `pos + 1`。`SuperpositionHandler.backToSpawn` / `getRespawnPoint` 改走 `AdvancedSpawnLocationHelper.getPlayerRespawnDimension` + `getValidSpawn`：维度锚路径落在安全落点并消耗充能（与 1.20 `getValidSpawn → findRespawnPositionAndUseSpawnBlock → findAndUseEndAnchor` 一致），床路径保持原有行为。
+
+    **发射器**：注册 `Items.ender_pearl` 的 `IBehaviorDispenseItem`（`BlockEndAnchor.EndAnchorDispenseBehavior`），正对充能维度锚时充能并消耗珍珠，否则交回原行为。
+
+    **配置黑名单**：`DIMENSION_BLACKLIST` 改为保存原始配置字符串，`BlockEndAnchor#isDimensionBlacklisted` 按「数字 id / `minecraft:overworld` 这类原版键 / `provider.getDimensionName()`」三种方式匹配（1.7.10 无维度注册表，自定义维度只能用后两种）。
+
+    **顺带对齐的细节**：光照值与比较器输出统一取 floor（`getScaledChargeLevel`，1.20 同式）；破坏方块只掉白板物品、不再随元数据保留充能（1.20 `getDrops` 行为）。
+
+    **已知未做 / 保留的差异**：① 外观——`blockstates/end_anchor.json`、`models/block/end_anchor_0..4.json` 与 `BlockPropertyRegistry.registerBlockItemProperty(END_ANCHOR, IntegerBlockProperty.meta("charges"))` 都已就位，但 `BlockEndAnchor#getRenderType()` 未返回 `ModelISBRH.JSON_ISBRH_ID`，方块仍用 IIcon 立方体渲染；`TileEndAnchor` 也从未被实例化（未实现 `ITileEntityProvider`）。切换需要客户端实测，本次未动。② 1.7.10 版保留了 1.20/原版都没有的「邻接水时爆炸」（`onNeighborBlockChange`），未做改动。
+
 ---
 
 ## 七、已实现但未完整实测
@@ -295,5 +323,6 @@
 - `./gradlew spotlessApply build` 通过，产物：`build/libs/enigmaticlegacy-*.jar`（约 7.6 MB，448 个模组类 + Mixin 配置）。
 - 服务端冒烟测试：注册表空字段 0/0，5 个法术石，392 条配方（58 条产出本模组物品），Baubles API/饰品判定 true，自定义酿造（粗制 + 石英 → 迅捷）与原版酿造（粗制 + 金胡萝卜 → 夜视）均 PASS。
 - 末影龙深渊之心：`MixinEntityDragon` 应用成功（`IAbyssalHeartBearer` 可赋值），心以 `PermanentItemEntity` 生成、owner 绑定与 `AbyssalHeartsGained` 计数正确（详见第 8 条）。
+- 维度锚：`MixinEntityPlayerSpawn` / `MixinServerConfigurationManager` / `MixinWorldProvider` 在服务端启动日志中均显示 `Mixing ... into net.minecraft.entity.player.EntityPlayer / ServerConfigurationManager / WorldProvider` 且无 `InvalidInjectionException`；refmap 已生成 `func_71056_a`（`verifyRespawnCoordinates`）与 `func_72368_a`（`respawnPlayer`）映射。**未做**：真实玩家的「设点 → 死亡 → 重生 / 召回药水」全流程实测。
 - 客户端：书籍 GUI、引言字幕、永久掉落物（钻石）与 3D 凋灵头颅渲染截图验证通过，无崩溃。
 - 临时验证探针（`PortSmokeTest`、`RenderProbe`）已删除。

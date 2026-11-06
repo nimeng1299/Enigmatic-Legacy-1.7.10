@@ -8,8 +8,8 @@ import java.util.Optional;
 import net.minecraft.block.Block;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
@@ -32,7 +32,14 @@ public class EndAnchor extends GenericBlockItem {
 
     public static Omniconfig.BooleanParameter endExclusiveMode;
     public static Omniconfig.PerhapsParameter chargeSaveChance;
-    public static final List<ResourceLocation> DIMENSION_BLACKLIST = new ArrayList<>();
+
+    /**
+     * Dimensions where the anchor refuses to set a respawn point. 1.20 stores resource
+     * locations here; 1.7.10 has no dimension registry, so the raw config entries are kept and
+     * matched against the numeric id, the vanilla dimension key and the provider name in
+     * {@link BlockEndAnchor#isDimensionBlacklisted(World)}.
+     */
+    public static final List<String> DIMENSION_BLACKLIST = new ArrayList<>();
 
     @SubscribeConfig
     public static void onConfig(OmniconfigWrapper builder) {
@@ -56,10 +63,13 @@ public class EndAnchor extends GenericBlockItem {
             builder.getCurrentCategory(),
             new String[0],
             "List of specific dimensions in which Dimensional Anchor will not work. If you want it to only work in The End - use EndExclusiveMode instead."
-                + " Examples: minecraft:overworld, minecraft:the_nether");
+                + " Examples: minecraft:overworld, minecraft:the_nether (1.7.10 also accepts raw dimension ids, e.g. 0, -1, 1)");
 
         Arrays.stream(blacklist)
-            .forEach(entry -> DIMENSION_BLACKLIST.add(new ResourceLocation(entry)));
+            .filter(
+                entry -> entry != null && !entry.trim()
+                    .isEmpty())
+            .forEach(entry -> DIMENSION_BLACKLIST.add(entry.trim()));
     }
 
     public EndAnchor() {
@@ -113,9 +123,13 @@ public class EndAnchor extends GenericBlockItem {
         int meta = level.getBlockMetadata(pos.getX(), pos.getY(), pos.getZ());
 
         if (block instanceof BlockEndAnchor && meta > 0 && BlockEndAnchor.canSetSpawn(level)) {
-            Optional<Vec3> optional = Optional
-                .of(Vec3.createVectorHelper(pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D));
-            return new AnchorSearchResult(optional, true, false);
+            ChunkCoordinates standUp = BlockEndAnchor.findStandUpPosition(level, pos.getX(), pos.getY(), pos.getZ());
+
+            if (standUp != null) {
+                Optional<Vec3> optional = Optional
+                    .of(Vec3.createVectorHelper(standUp.posX + 0.5D, standUp.posY, standUp.posZ + 0.5D));
+                return new AnchorSearchResult(optional, true, false);
+            }
         }
 
         return new AnchorSearchResult(Optional.empty(), false, false);

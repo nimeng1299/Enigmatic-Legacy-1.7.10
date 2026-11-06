@@ -65,6 +65,7 @@ import com.aizistral.enigmaticlegacy.compat.curios.SlotContext;
 import com.aizistral.enigmaticlegacy.compat.network.PacketDistributor;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
+import com.aizistral.enigmaticlegacy.helpers.AdvancedSpawnLocationHelper;
 import com.aizistral.enigmaticlegacy.items.CursedRing;
 import com.aizistral.enigmaticlegacy.items.EldritchPan;
 import com.aizistral.enigmaticlegacy.items.GolemHeart;
@@ -1069,9 +1070,12 @@ public class SuperpositionHandler {
     }
 
     public static WorldServer backToSpawn(EntityPlayerMP serverPlayer, double yOffset) {
-        int respawnDimension = serverPlayer.getBedLocation(serverPlayer.dimension) != null ? serverPlayer.dimension : 0;
+        int respawnDimension = AdvancedSpawnLocationHelper.getPlayerRespawnDimension(serverPlayer);
         WorldServer respawnWorld = SuperpositionHandler.getWorld(respawnDimension);
         net.minecraft.util.ChunkCoordinates spawn = serverPlayer.getBedLocation(respawnDimension);
+        boolean endAnchor = AdvancedSpawnLocationHelper.isUsableEndAnchor(respawnWorld, spawn);
+        Optional<Vec3> anchorSpawn = endAnchor ? AdvancedSpawnLocationHelper.getValidSpawn(respawnWorld, serverPlayer)
+            : Optional.empty();
 
         if (spawn == null) {
             spawn = respawnWorld.getSpawnPoint();
@@ -1100,7 +1104,12 @@ public class SuperpositionHandler {
             serverPlayer.travelToDimension(respawnDimension);
         }
 
-        serverPlayer.setPositionAndUpdate(spawn.posX + 0.5D, spawn.posY + 0.5D + yOffset, spawn.posZ + 0.5D);
+        if (anchorSpawn.isPresent()) {
+            Vec3 target = anchorSpawn.get();
+            serverPlayer.setPositionAndUpdate(target.xCoord, target.yCoord, target.zCoord);
+        } else {
+            serverPlayer.setPositionAndUpdate(spawn.posX + 0.5D, spawn.posY + 0.5D + yOffset, spawn.posZ + 0.5D);
+        }
 
         serverPlayer.worldObj
             .playSoundAtEntity(serverPlayer, "mob.endermen.portal", 1.0F, (float) (0.8F + Math.random() * 0.2D));
@@ -1124,12 +1133,21 @@ public class SuperpositionHandler {
     }
 
     public static DimensionalPosition getRespawnPoint(EntityPlayerMP serverPlayer) {
-        int respawnDimension = serverPlayer.getBedLocation(serverPlayer.dimension) != null ? serverPlayer.dimension : 0;
+        int respawnDimension = AdvancedSpawnLocationHelper.getPlayerRespawnDimension(serverPlayer);
         WorldServer respawnWorld = SuperpositionHandler.getWorld(respawnDimension);
         net.minecraft.util.ChunkCoordinates spawn = serverPlayer.getBedLocation(respawnDimension);
 
         if (spawn == null) {
             spawn = respawnWorld.getSpawnPoint();
+        }
+
+        if (AdvancedSpawnLocationHelper.isUsableEndAnchor(respawnWorld, spawn)) {
+            Optional<Vec3> anchorSpawn = AdvancedSpawnLocationHelper.getValidSpawn(respawnWorld, serverPlayer);
+
+            if (anchorSpawn.isPresent()) {
+                Vec3 target = anchorSpawn.get();
+                return new DimensionalPosition(target.xCoord, target.yCoord, target.zCoord, respawnWorld);
+            }
         }
 
         double y = spawn.posY;
