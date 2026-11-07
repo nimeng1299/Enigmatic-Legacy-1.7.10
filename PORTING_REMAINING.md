@@ -325,6 +325,7 @@
 - 壮丽鞘翅：`MixinEtFuturumElytra` / `MixinEtFuturumElytraTakeoff` 已由客户端启动日志确认注入成功（`Mixing ... into ganymedes01.etfuturum.items.equipment.ItemArmorElytra` / `...network.StartElytraFlyingHandler`），但「空手跳→起飞→按住跳跃加速→落地」整条链未在游戏内跑过；`MixinEtFuturumElytraLayer` 目标类只在渲染玩家时加载，翅膀贴图/裁剪同样未经肉眼确认。
 - 末影之屠：补上潜影贝/末影螨的「末地居民」判定、潜影贝传送封锁与黑曜石修复。`MixinEtFuturumShulkerTeleport` 已由启动日志确认注入（`Mixing ... into ganymedes01.etfuturum.entities.EntityShulker`），但「命中潜影贝 → 400 tick 内不传送」与铁砧黑曜石修复未做游戏内验证。
 - 烈焰之傲壁垒：格挡此前**完全没有接上**（`SuperpositionHandler#onDamageSourceBlocking` 是死代码），现由 `MixinEntityPlayerShieldBlock` 在 `EntityPlayer#attackEntityFrom` 头部取消正面命中，并补齐烈焰之力叠加、点燃攻击者、盾牌耐久损耗与背后 150% 伤害；注入已由启动日志确认（`Mixing MixinEntityPlayerShieldBlock ... into net.minecraft.entity.player.EntityPlayer`）。未做游戏内实测：举盾挡正面/侧面/背后、攻击者是否着火、烈焰之力层数与被打断、耐久消耗速度。
+- 无止之言：逐项核对（BOSS/玩家 +200% 伤害、+200% 击退、握持时 85% 免死、命中附加六种负面、第四诅咒「始终满伤害」改写、10% 吸血、全剑类附魔、耐久附魔排除、书页右键打开）后，**功能层无缺失**。唯一未实现的是 1.20 的 `the_infinitum_open` item property——握持时书籍逐帧展开的图标动画；两张帧贴图 `the_infinitum_1/2.png` 此前是死资源。现由 `client/TheInfinitumOpenAnimator` 每客户端 tick 驱动计数、`TheInfinitum#getIcon`/`getIconIndex` 取帧（1.7.10 的 `getIcon` 拿不到玩家，故按「当前持有者手中的那个 ItemStack 实例」做同一性判定）。未做游戏内观感验证。注意：1.20 的 `LifestealBonus` 配置项上游只有 tooltip 会读，实际吸血写死 0.1F，本移植保持一致（属上游缺陷，未擅自修正）。
 
 ---
 

@@ -3,12 +3,14 @@ package com.aizistral.enigmaticlegacy.items;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 
 import com.aizistral.enigmaticlegacy.api.generic.SubscribeConfig;
@@ -23,6 +25,7 @@ import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
+import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
 import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 
@@ -30,6 +33,26 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public class TheInfinitum extends TheAcknowledgment implements IEldritch {
+
+    /**
+     * 1.20 drives the three-stage "book opens while held" animation through the
+     * {@code enigmaticlegacy:the_infinitum_open} item property, its value coming from a per-player
+     * counter that {@code ClientProxy#updateInfinitumCounters} advances once per client tick. 1.7.10
+     * has no item properties and its icon lookups only get the stack, so the counter lives here and
+     * the current holder's stack is remembered for identity comparison.
+     */
+    @SideOnly(Side.CLIENT)
+    private static ItemStack openStack;
+    @SideOnly(Side.CLIENT)
+    private static int openCounter;
+    /** 0 = closed, 1 = half open, 2 = fully open. */
+    @SideOnly(Side.CLIENT)
+    private static int openStage;
+
+    @SideOnly(Side.CLIENT)
+    private IIcon iconHalfOpen;
+    @SideOnly(Side.CLIENT)
+    private IIcon iconOpen;
 
     public static Omniconfig.DoubleParameter attackDamage;
     public static Omniconfig.DoubleParameter attackSpeed;
@@ -129,6 +152,72 @@ public class TheInfinitum extends TheAcknowledgment implements IEldritch {
         if (stack.isItemEnchanted()) {
             ItemLoreHelper.addLocalizedString(list, "tooltip.enigmaticlegacy.void");
         }
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(IIconRegister registry) {
+        super.registerIcons(registry);
+        this.iconHalfOpen = registry.registerIcon("enigmaticlegacy:item/the_infinitum_1");
+        this.iconOpen = registry.registerIcon("enigmaticlegacy:item/the_infinitum_2");
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIcon(ItemStack stack, int pass) {
+        IIcon staged = this.stagedIcon(stack);
+        return staged != null ? staged : super.getIcon(stack, pass);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconIndex(ItemStack stack) {
+        IIcon staged = this.stagedIcon(stack);
+        return staged != null ? staged : super.getIconIndex(stack);
+    }
+
+    @SideOnly(Side.CLIENT)
+    private IIcon stagedIcon(ItemStack stack) {
+        if (stack != openStack || openStage <= 0) return null;
+
+        return openStage == 2 ? this.iconOpen : this.iconHalfOpen;
+    }
+
+    /**
+     * Once-per-client-tick counterpart of {@code ClientProxy#updateInfinitumCounters}. Holds the
+     * stage for six ticks after the book is first held (half open on the sixth, fully open from the
+     * seventh), then unwinds it at the same rate once it is put away.
+     */
+    @SideOnly(Side.CLIENT)
+    public static void tickOpenStage(EntityPlayer player) {
+        ItemStack held = player != null ? player.getHeldItem() : null;
+        boolean holding = held != null && held.getItem() == EnigmaticItems.THE_INFINITUM
+            && SuperpositionHandler.isTheWorthyOne(player);
+
+        if (holding) {
+            if (openStack != held) {
+                openStack = held;
+                openCounter = 0;
+                openStage = 0;
+            }
+
+            openStage = openCounter > 5 ? 2 : openCounter == 5 ? 1 : 0;
+            openCounter++;
+            return;
+        }
+
+        if (openCounter <= 0) {
+            openStack = null;
+            openStage = 0;
+            return;
+        }
+
+        if (openCounter > 5) {
+            openCounter = 5;
+        }
+
+        openStage = openCounter > 1 ? 2 : openCounter == 1 ? 1 : 0;
+        openCounter--;
     }
 
     @Override
