@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
@@ -396,13 +397,45 @@ public class EldritchPan extends ItemBaseTool implements ICursed, ICreativeTabMe
     }
 
     public static Ingredient getRepairMaterial() {
-        return Ingredient.of(
-            new ItemStack(Items.beef),
-            new ItemStack(Items.porkchop),
-            new ItemStack(Items.rotten_flesh),
-            new ItemStack(Items.apple),
-            new ItemStack(Items.golden_apple),
-            new ItemStack(Items.poisonous_potato));
+        List<ItemStack> stacks = new ArrayList<>();
+        stacks.add(new ItemStack(Items.beef));
+        stacks.add(new ItemStack(Items.porkchop));
+        stacks.add(new ItemStack(Items.rotten_flesh));
+        stacks.add(new ItemStack(Items.apple));
+        stacks.add(new ItemStack(Items.golden_apple));
+        stacks.add(new ItemStack(Items.golden_apple, 1, 1));
+        stacks.add(new ItemStack(Items.poisonous_potato));
+
+        // Mutton only exists on 1.7.10 through Et Futurum, so it is added conditionally.
+        if (cpw.mods.fml.common.Loader.isModLoaded("etfuturum")) {
+            ItemStack mutton = com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat.mutton();
+
+            if (mutton != null) {
+                stacks.add(mutton);
+            }
+        }
+
+        return Ingredient.of(stacks.toArray(new ItemStack[stacks.size()]));
+    }
+
+    /**
+     * 1.20 gets this from {@code EnigmaticMaterials.ELDRITCH_PAN}'s repair ingredient; 1.7.10
+     * {@code ToolMaterial}s created through {@code EnumHelper} carry no repair item, so without
+     * this override the pan could never be repaired despite its 4000 durability.
+     */
+    @Override
+    public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
+        return getRepairMaterial().test(repair);
+    }
+
+    /**
+     * 1.20 limits the pan to whatever a diamond sword would accept; the 1.7.10 {@code ItemBase}
+     * default accepts every enchantment outright, which would let it take armor enchantments.
+     */
+    @Override
+    public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
+        return com.aizistral.enigmaticlegacy.compat.Enchantments
+            .canApplyAtEnchantingTable(UNSUSPECTING_DIAMOND_SWORD, enchantment);
     }
 
     @Override

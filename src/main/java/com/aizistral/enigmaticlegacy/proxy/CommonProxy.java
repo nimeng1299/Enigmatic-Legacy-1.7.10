@@ -99,6 +99,7 @@ public class CommonProxy {
     }
 
     public void postInit(FMLPostInitializationEvent event) {
+        com.aizistral.enigmaticlegacy.registries.EnigmaticEffects.validate();
         com.aizistral.enigmaticlegacy.items.GolemHeart.buildArmorExclusions();
         com.aizistral.enigmaticlegacy.crafting.EnigmaticRecipeRegistrar.register();
         com.aizistral.enigmaticlegacy.crafting.JsonRecipeLoader.load();

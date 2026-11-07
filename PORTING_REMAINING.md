@@ -239,6 +239,8 @@
 
 **同类隐患已统一修复**：`ItemBase` 现在提供 `getAttributeModifiers(ItemStack)` 桥接，等价于「1.7.10 版的默认主手槽装饰器汇入」。`TheJudgement`（∞ +28）、`EldritchPan`、`The Infinitum`、三本书等所有走 `ItemBase` 的武器，其双参属性方法终于生效；此前它们的伤害/攻速全是死数据，只有 `ItemBaseTool` 子类因为另写了 1.7.10 原生 `getItemAttributeModifiers()` 而正常。注意 `EldritchPan` 自己的 "Tool modifier" 与 "Weapon modifier" 共用攻击伤害 UUID，按 UUID 去重后只剩后者（与其 1.20 行为一致）；未重写 `getAttributeModifiers(EquipmentSlot, …)` 的物品（护甲类）返回空 map，桥接直接回落到原版，行为不变。
 
+**护甲属性的坑（后续补充）**：桥接只解决了「修饰符能不能取到」，没解决「能不能用上」。1.7.10 把 `generic.armor` 这类现代属性按名字塞进 `BaseAttributeMap`，而玩家的属性表里根本没有注册这个属性，`applyAttributeModifiers` 会静默丢弃；并且那段装备属性更新代码被 `!worldObj.isRemote` 包着，客户端永远不会应用手持物品的属性。所以 `EldritchPan` 的「+4 护甲 / 每杀一种 +0.5 护甲」此前**实际为 0**（第 246 行探针看到的 `+4 护甲` 只是 multimap 里有这条记录，不等于生效）。现改为在 `MixinEntityPlayerArmor#getTotalArmorValue` 里直接从手持物品的属性表读取 `generic.armor` 累加（无状态、双端一致），并保留属性实例通道作为兜底（取两者较大值，避免将来真有人注册该属性时重复计算）。
+
 **平台不适用**：幻翼击退 ×1.5（1.7.10 无幻翼）；书籍标题仍固定显示 "The Acknowledgment"，不随手持的倒转之启/无限之启变化（1.20 由 `gui/AcknowlegmentNameRenderer` 实现，属第 13 条）。
 
 **tooltip 文本修复**：`zh_CN.lang` 的 `tooltip.enigmaticlegacy.theTwist2` 末尾带着两枚私用区字符 `U+E908 U+E909`（1.20 里由 unifont 兜底，1.7.10 没有 `unicode_page_e9.png`，客户端会刷 `Failed to load texture: minecraft:textures/font/unicode_page_e9.png` 并渲染成空白/豆腐块）。该字符对在中文里是「……」的替代字形，现已连同其它 12 处一起替换为真正的省略号。检查结论：`theTwist1`~`theTwist7` 五个语言文件全部存在，占位符 `%1$s` 在 1.7.10 的 `ChatComponentTranslation`（`String.format`）下也能正常代入，不存在「显示原始键」的情况（1.7.10 缺键会回落 en_US，而不是打印键名）。
@@ -302,6 +304,12 @@
 
     **实测**（临时客户端探针，在服务端线程操作真实 `EntityPlayerMP`；探针已删除）：装上七咒之戒后 `cursed=true`；写入字符串维度 `"-1"` 的旧格式标签 → `canDrink=true`、维度 `0→-1`、坐标 `0.50/70.00/0.50`、血量 `1.0`；写入 int 维度 `0` → `canDrink=true`、维度 `-1→0`、坐标 `1.50/71.00/1.50`、血量 `1.0`；删掉标签 → `canDrink=false`、不传送、无异常。另用 `NBTTagCompound` 单测确认旧代码的 `getInteger` 对字符串标签返回 0、`(CompoundTag)` 对反序列化标签抛 `ClassCastException`。
 
+23. **自定义药水 ID 与其它 mod 撞车（幽灵级 bug）**：1.7.10 的 `Potion` 在自己构造函数里直接写 `Potion.potionTypes[id] = this`，先注册的会被后注册的**静默覆盖**。本 mod 的五个效果用 `PotionIds.next()` 从 24 开始找空位，而 Et Futurum Requiem 的 levitation 默认也是 **27**；FML 默认顺序里 Enigmatic Legacy 的 preInit（第 15 位）早于 Et Futurum（第 19 位），于是 `growing_bloodlust` 拿到 27 后被 levitation 顶掉。表现：拿着饕餮之锅（在和平难度或吃过禁果时施加 Growing Bloodlust）时 `new PotionEffect(27, …)` 解析成 levitation，**人被直接送上天**，且嗜血本身从来没生效过；松手 `removePotionEffect(27)` 又把 levitation 移除，看起来就像"锅会飞"。
+
+    修复：`@Mod` 依赖加 `after:etfuturum`（1.7.10 的多依赖用 `;` 分隔，用 `,` 会被当成非法版本串导致 `ComparableVersion.parseVersion` NPE 崩游戏），让我们的 preInit 排在 Et Futurum 之后，`PotionIds` 自然跳过 27；另在 `EnigmaticEffects.validate()`（`postInit` 调用）里逐个核对 `potionTypes[id] == 自己`，被抢就打印 ERROR 并列出占据者类名，把这类问题从"游戏里行为诡异"变成"日志里一行红字"。启动日志现为 `Registered effects: blazing_strength=24, molten_heart=25, growing_hunger=26, growing_bloodlust=28, slow_falling=29`，无冲突告警。
+
+    **注意**：`Potion.id` 是 `final`，运行时用反射改不了（本工程跑在 Java 25 上），所以只能靠加载顺序避让；若日后又装了别的注册 24–31 的 mod，看日志红字把它的 id 改掉或给本 mod 加上对应的 `after:`。
+
 ---
 
 ## 七、已实现但未完整实测
@@ -326,6 +334,7 @@
 - 末影之屠：补上潜影贝/末影螨的「末地居民」判定、潜影贝传送封锁与黑曜石修复。`MixinEtFuturumShulkerTeleport` 已由启动日志确认注入（`Mixing ... into ganymedes01.etfuturum.entities.EntityShulker`），但「命中潜影贝 → 400 tick 内不传送」与铁砧黑曜石修复未做游戏内验证。
 - 烈焰之傲壁垒：格挡此前**完全没有接上**（`SuperpositionHandler#onDamageSourceBlocking` 是死代码），现由 `MixinEntityPlayerShieldBlock` 在 `EntityPlayer#attackEntityFrom` 头部取消正面命中，并补齐烈焰之力叠加、点燃攻击者、盾牌耐久损耗与背后 150% 伤害；注入已由启动日志确认（`Mixing MixinEntityPlayerShieldBlock ... into net.minecraft.entity.player.EntityPlayer`）。未做游戏内实测：举盾挡正面/侧面/背后、攻击者是否着火、烈焰之力层数与被打断、耐久消耗速度。
 - 无止之言：逐项核对（BOSS/玩家 +200% 伤害、+200% 击退、握持时 85% 免死、命中附加六种负面、第四诅咒「始终满伤害」改写、10% 吸血、全剑类附魔、耐久附魔排除、书页右键打开）后，**功能层无缺失**。唯一未实现的是 1.20 的 `the_infinitum_open` item property——握持时书籍逐帧展开的图标动画；两张帧贴图 `the_infinitum_1/2.png` 此前是死资源。现由 `client/TheInfinitumOpenAnimator` 每客户端 tick 驱动计数、`TheInfinitum#getIcon`/`getIconIndex` 取帧（1.7.10 的 `getIcon` 拿不到玩家，故按「当前持有者手中的那个 ItemStack 实例」做同一性判定）。未做游戏内观感验证。注意：1.20 的 `LifestealBonus` 配置项上游只有 tooltip 会读，实际吸血写死 0.1F，本移植保持一致（属上游缺陷，未擅自修正）。
+- 饕餮之锅：主体效果（首次击杀计数与聊天提示、击杀烹饪掉落、持握叠 Growing Hunger/Bloodlust、吸血 15%/饥饿偷取 2、格挡消耗投射物、第四诅咒改写、命中音效与耐久）都在。补了三处——① **护甲完全没生效**（见第六节「护甲属性的坑」），现在从手持物品属性表直读；② **修复材料没接线**（`EnumHelper` 材料没有 repair item），已覆写 `isValidRepairItem` 用 `getRepairMaterial()`，并补上 1.20 列表里的附魔金苹果与羊肉（1.7.10 原版无羊肉，改走 Et Futurum 的 `MUTTON_RAW`，未装则跳过）；③ **附魔台限制缺失**（`ItemBase` 默认放行一切附魔，锅能吃护甲附魔），已改为与钻石剑同规则。`MixinEntityPlayerArmor` 注入已由启动日志确认。未做游戏内实测：护甲条数值、铁砧用肉修锅、附魔台可选附魔列表、100 种击杀后的封顶提示。
 
 ---
 

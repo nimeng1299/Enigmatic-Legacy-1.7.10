@@ -20,7 +20,11 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
     modid = EnigmaticLegacy.MODID,
     name = "Enigmatic Legacy",
     version = Tags.VERSION,
-    dependencies = "required-after:Baubles",
+    // Et Futurum Requiem registers its levitation potion at id 27 by default. Potion ids are
+    // allocated by scanning for a free slot, and FML runs our preInit before theirs unless this
+    // ordering constraint exists - which made our Growing Bloodlust (id 27) get silently replaced
+    // by levitation, so holding The Voracious Pan literally launched the player skywards.
+    dependencies = "required-after:Baubles;after:etfuturum",
     acceptedMinecraftVersions = "[1.7.10]")
 public class EnigmaticLegacy {
 

@@ -70,6 +70,13 @@ public final class EtFuturumCompat {
         return itemStack(ModItems.ELYTRA);
     }
 
+    /**
+     * Raw mutton, which vanilla 1.7.10 does not have at all.
+     */
+    public static ItemStack mutton() {
+        return itemStack(ModItems.MUTTON_RAW);
+    }
+
     public static ItemStack chorusFruit() {
         return itemStack(ModItems.CHORUS_FRUIT);
     }
