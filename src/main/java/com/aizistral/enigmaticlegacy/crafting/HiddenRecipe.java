@@ -1,6 +1,9 @@
 package com.aizistral.enigmaticlegacy.crafting;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.minecraft.inventory.InventoryCrafting;
@@ -13,14 +16,16 @@ import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
 
 /**
- * Hidden 3x3 recipe type. Recipes are stored as flat nine-slot grids and are
- * matched in any position, but never shown by recipe viewers.
- * 
+ * Special 3x3 recipe type. Recipes are stored as flat nine-slot grids that are
+ * matched directly against the crafting grid. The grids are also exposed
+ * through {@link #getRecipes()} so recipe viewers such as NEI can display them,
+ * while this class keeps its custom output and NBT handling.
+ *
  * @author Integral
  */
 public class HiddenRecipe implements IRecipe {
 
-    private static final Map<ItemStack[], ItemStack> RECIPES = new HashMap<ItemStack[], ItemStack>();
+    private static final Map<ItemStack[], ItemStack> RECIPES = new LinkedHashMap<ItemStack[], ItemStack>();
     private static final int GRID_SIZE = 9;
 
     public static void addRecipe(ItemStack output, ItemStack... inputs) {
@@ -30,6 +35,60 @@ public class HiddenRecipe implements IRecipe {
         System.arraycopy(inputs, 0, grid, 0, GRID_SIZE);
 
         RECIPES.put(grid, output);
+    }
+
+    /**
+     * Returns immutable snapshots of every registered grid, in registration
+     * order. Intended for recipe viewers; callers receive copies and cannot
+     * mutate the recipes used for matching.
+     */
+    public static List<RecipeGrid> getRecipes() {
+        List<RecipeGrid> snapshots = new ArrayList<RecipeGrid>(RECIPES.size());
+
+        for (Map.Entry<ItemStack[], ItemStack> entry : RECIPES.entrySet()) {
+            ItemStack[] inputs = new ItemStack[GRID_SIZE];
+
+            for (int i = 0; i < GRID_SIZE; i++) {
+                ItemStack input = entry.getKey()[i];
+                inputs[i] = input == null ? null : input.copy();
+            }
+
+            ItemStack output = entry.getValue();
+
+            if (output == null || output.getItem() == null) continue;
+
+            snapshots.add(new RecipeGrid(inputs, output.copy()));
+        }
+
+        return Collections.unmodifiableList(snapshots);
+    }
+
+    /**
+     * Read-only snapshot of a single hidden recipe grid.
+     */
+    public static final class RecipeGrid {
+
+        private final ItemStack[] inputs;
+        private final ItemStack output;
+
+        private RecipeGrid(ItemStack[] inputs, ItemStack output) {
+            this.inputs = inputs;
+            this.output = output;
+        }
+
+        public ItemStack[] getInputs() {
+            ItemStack[] copy = new ItemStack[this.inputs.length];
+
+            for (int i = 0; i < this.inputs.length; i++) {
+                copy[i] = this.inputs[i] == null ? null : this.inputs[i].copy();
+            }
+
+            return copy;
+        }
+
+        public ItemStack getOutput() {
+            return this.output == null ? null : this.output.copy();
+        }
     }
 
     private static Map.Entry<ItemStack[], ItemStack> findRecipe(InventoryCrafting inv) {
