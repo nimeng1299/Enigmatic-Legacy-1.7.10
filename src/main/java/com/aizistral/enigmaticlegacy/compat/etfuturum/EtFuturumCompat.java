@@ -136,4 +136,12 @@ public final class EtFuturumCompat {
     private static ItemStack blockStack(ModBlocks block) {
         return block.isEnabled() ? new ItemStack(block.getItem()) : null;
     }
+
+    /**
+     * Levitation only exists on 1.7.10 through Et Futurum, and only when shulkers are enabled in
+     * its config; {@code null} means the effect is simply unavailable.
+     */
+    public static net.minecraft.potion.Potion levitation() {
+        return ganymedes01.etfuturum.potion.ModPotions.levitation;
+    }
 }

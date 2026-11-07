@@ -117,6 +117,7 @@ import com.aizistral.enigmaticlegacy.items.HunterGuidebook;
 import com.aizistral.enigmaticlegacy.items.MiningCharm;
 import com.aizistral.enigmaticlegacy.items.MonsterCharm;
 import com.aizistral.enigmaticlegacy.items.OceanStone;
+import com.aizistral.enigmaticlegacy.items.TheCube;
 import com.aizistral.enigmaticlegacy.items.TheInfinitum;
 import com.aizistral.enigmaticlegacy.items.TheTwist;
 import com.aizistral.enigmaticlegacy.items.VoidPearl;
@@ -740,7 +741,8 @@ public class EnigmaticEventHandler {
         }
 
         if (event.attackDamage > 0 && event.entityLiving instanceof EntityPlayer
-            && SuperpositionHandler.hasCurio(event.entityLiving, EnigmaticItems.EYE_OF_NEBULA)) {
+            && (SuperpositionHandler.hasCurio(event.entityLiving, EnigmaticItems.EYE_OF_NEBULA)
+                || SuperpositionHandler.hasCurio(event.entityLiving, EnigmaticItems.THE_CUBE))) {
             event.attackDamage = 0;
         }
     }
@@ -1367,9 +1369,15 @@ public class EnigmaticEventHandler {
              * never used.
              */
 
-            if (event.ammount > 0F && CompatDamage.is(source, DamageTypes.PLAYER_ATTACK)
-                && SuperpositionHandler.hasCurio(player, EnigmaticItems.BERSERK_CHARM)) {
-                BerserkEmblem.shortenHurtResistance(player, victim);
+            if (event.ammount > 0F && CompatDamage.is(source, DamageTypes.PLAYER_ATTACK)) {
+                if (SuperpositionHandler.hasCurio(player, EnigmaticItems.BERSERK_CHARM)) {
+                    BerserkEmblem.shortenHurtResistance(player, victim);
+                }
+
+                // Non-Euclidean Cube's unconditional +40% attack speed, emulated the same way.
+                if (SuperpositionHandler.hasCurio(player, EnigmaticItems.THE_CUBE)) {
+                    TheCube.shortenHurtResistance(victim);
+                }
             }
 
             if (SuperpositionHandler.hasCurio(player, EnigmaticItems.EYE_OF_NEBULA)) {

@@ -37,6 +37,7 @@ import com.aizistral.enigmaticlegacy.items.generic.ItemSpellstoneCurio;
 import com.aizistral.enigmaticlegacy.objects.Vector3;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketForceArrowRotations;
 import com.aizistral.enigmaticlegacy.packets.clients.PacketPlayerMotion;
+import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticSounds;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
 import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
@@ -268,26 +269,62 @@ public class AngelBlessing extends ItemSpellstoneCurio {
     }
 
     private void tryDeflect(EntityLivingBase bearer, Entity projectile) {
+        deflectProjectile(bearer, projectile, getDeflectChance(bearer));
+    }
+
+    /**
+     * Total deflection chance for one bearer. 1.20 adds up every source into a single roll in its
+     * {@code ProjectileImpactEvent} handler; the two sources this port scans for are Angel's
+     * Blessing and the Non-Euclidean Cube. Both items call this, so wearing them together rolls
+     * once at the summed chance instead of twice at 50% / 35% - the shared {@code AB_DEFLECT_*}
+     * NBT guards already guarantee a projectile is processed only once.
+     */
+    public static double getDeflectChance(EntityLivingBase bearer) {
+        double chance = 0.0D;
+
+        if (SuperpositionHandler.hasCurio(bearer, EnigmaticItems.ANGEL_BLESSING)) {
+            chance += deflectChance.getValue()
+                .asMultiplier(false);
+        }
+
+        if (SuperpositionHandler.hasCurio(bearer, EnigmaticItems.THE_CUBE)) {
+            chance += 0.35D;
+        }
+
+        return chance;
+    }
+
+    /**
+     * Bounces a projectile that is heading towards the bearer, with the given probability.
+     * <p>
+     * 1.20 rolls this from {@code ProjectileImpactEvent}, which 1.7.10 lacks; this version instead
+     * scans incoming projectiles every tick (see {@link #curioTick}). The routine is shared with
+     * the Non-Euclidean Cube, and the chance passed in is the summed value from
+     * {@link #getDeflectChance}. The NBT guards make sure a projectile is only ever processed once,
+     * so wearing both items cannot roll for the same projectile twice.
+     *
+     * @return {@code true} if the projectile was deflected
+     */
+    public static boolean deflectProjectile(EntityLivingBase bearer, Entity projectile, double chance) {
         if (!(projectile instanceof EntityArrow || projectile instanceof EntityThrowable
-            || projectile instanceof EntityFireball)) return;
+            || projectile instanceof EntityFireball)) return false;
 
         if (projectile.getEntityData()
-            .getBoolean("AB_DEFLECTED")) return;
+            .getBoolean("AB_DEFLECTED")) return false;
 
         if (projectile.getEntityData()
-            .getBoolean("AB_DEFLECT_CHECKED")) return;
+            .getBoolean("AB_DEFLECT_CHECKED")) return false;
 
         Vector3 motionVec = new Vector3(projectile.motionX, projectile.motionY, projectile.motionZ);
         Vector3 toBearer = Vector3.fromEntityCenter(bearer)
             .subtract(Vector3.fromEntityCenter(projectile));
 
-        if (motionVec.dotProduct(toBearer) <= 0) return;
+        if (motionVec.dotProduct(toBearer) <= 0) return false;
 
         projectile.getEntityData()
             .setBoolean("AB_DEFLECT_CHECKED", true);
 
-        if (!deflectChance.getValue()
-            .roll()) return;
+        if (bearer.worldObj.rand.nextDouble() > chance) return false;
 
         projectile.getEntityData()
             .setBoolean("AB_DEFLECTED", true);
@@ -329,6 +366,8 @@ public class AngelBlessing extends ItemSpellstoneCurio {
 
         projectile.worldObj
             .playSoundAtEntity(bearer, EnigmaticSounds.DEFLECT.getName(), 1.0F, (float) (0.95F + Math.random() * 0.1D));
+
+        return true;
     }
 
 }
