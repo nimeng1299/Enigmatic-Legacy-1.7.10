@@ -21,6 +21,7 @@
         "MixinEntityPlayerArmor",
         "MixinEntityPlayerKnockback",
         "MixinEntityPlayerMP",
+        "MixinEntityPlayerShieldBlock",
         "MixinEntityPlayerSpawn",
         "MixinEntityVillager",
         "MixinItemInWorldManager",

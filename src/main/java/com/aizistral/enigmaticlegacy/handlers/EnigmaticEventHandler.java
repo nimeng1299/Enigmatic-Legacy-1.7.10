@@ -1292,8 +1292,11 @@ public class EnigmaticEventHandler {
                         trueSource.posY + trueSource.getEyeHeight() / 2.0D,
                         trueSource.posZ);
                     Vec3 lookVec = player.getLookVec();
+                    // Vector from the attacker towards the player. Anything in front of the player
+                    // gets fully blocked in MixinEntityPlayerShieldBlock, so what reaches this point
+                    // is an attack from behind - the one the tooltip promises a 50% bonus against.
                     Vec3 sourceToSelf = Vec3
-                        .createVectorHelper(sourcePos.xCoord - player.posX, 0.0D, sourcePos.zCoord - player.posZ)
+                        .createVectorHelper(player.posX - sourcePos.xCoord, 0.0D, player.posZ - sourcePos.zCoord)
                         .normalize();
 
                     if (sourceToSelf.dotProduct(lookVec) >= 0.0D) {

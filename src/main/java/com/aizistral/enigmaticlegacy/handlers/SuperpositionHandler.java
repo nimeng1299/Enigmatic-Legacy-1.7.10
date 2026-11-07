@@ -41,6 +41,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
@@ -1567,7 +1568,8 @@ public class SuperpositionHandler {
         return player.capabilities.isCreativeMode || EnigmaticLegacy.SOUL_OF_THE_ARCHITECT.equals(player.getUniqueID());
     }
 
-    public static boolean onDamageSourceBlocking(EntityLivingBase blocker, ItemStack useItem, DamageSource source) {
+    public static boolean onDamageSourceBlocking(EntityLivingBase blocker, ItemStack useItem, DamageSource source,
+        float amount) {
         if (blocker instanceof EntityPlayer && useItem != null) {
             EntityPlayer player = (EntityPlayer) blocker;
             boolean blocking = player.isBlocking();
@@ -1581,8 +1583,10 @@ public class SuperpositionHandler {
                     Vec3 sourcePos = net.minecraft.util.Vec3
                         .createVectorHelper(direct.posX, direct.posY + direct.getEyeHeight() / 2.0D, direct.posZ);
                     Vec3 lookVec = blocker.getLookVec();
+                    // Vector pointing from the attacker towards the blocker - the modern implementation
+                    // derives it through Vec3#vectorTo(blocker.position()) for the same reason.
                     Vec3 sourceToSelf = net.minecraft.util.Vec3
-                        .createVectorHelper(sourcePos.xCoord - blocker.posX, 0.0D, sourcePos.zCoord - blocker.posZ)
+                        .createVectorHelper(blocker.posX - sourcePos.xCoord, 0.0D, blocker.posZ - sourcePos.zCoord)
                         .normalize();
 
                     if (sourceToSelf.dotProduct(lookVec) < 0.0D) {
@@ -1599,9 +1603,12 @@ public class SuperpositionHandler {
                         player.addPotionEffect(
                             new PotionEffect(EnigmaticEffects.BLAZING_STRENGTH.id, 1200, strength + 1, true));
 
-                        if (direct instanceof EntityLivingBase) {
+                        // 1.20 only ever reaches this from LivingEntity#hurt, which bails out on the
+                        // client; 1.7.10 does call attackEntityFrom on both sides.
+                        if (!player.worldObj.isRemote && direct instanceof EntityLivingBase) {
                             EntityLivingBase living = (EntityLivingBase) direct;
 
+                            // 1.20 also exempts guardians here, but those do not exist on 1.7.10.
                             if (!living.isImmuneToFire()) {
                                 StackTraceElement[] stacktrace = Thread.currentThread()
                                     .getStackTrace();
@@ -1620,6 +1627,13 @@ public class SuperpositionHandler {
                             }
                         }
 
+                        // Mirrors LivingEntity#hurtCurrentlyUsedShield on the modern version, which
+                        // the 1.7.10 damage pipeline has no equivalent of. Server only, exactly like
+                        // its {@code !level.isClientSide} guard.
+                        if (!player.worldObj.isRemote) {
+                            useItem.damageItem(1 + MathHelper.floor_float(amount), player);
+                        }
+
                         return true;
                     }
                 }
@@ -1633,7 +1647,7 @@ public class SuperpositionHandler {
                         .createVectorHelper(projectile.posX, projectile.posY, projectile.posZ);
                     Vec3 lookVec = blocker.getLookVec();
                     Vec3 sourceToSelf = net.minecraft.util.Vec3
-                        .createVectorHelper(sourcePos.xCoord - blocker.posX, 0.0D, sourcePos.zCoord - blocker.posZ)
+                        .createVectorHelper(blocker.posX - sourcePos.xCoord, 0.0D, blocker.posZ - sourcePos.zCoord)
                         .normalize();
 
                     if (sourceToSelf.dotProduct(lookVec) < 0.0D) {

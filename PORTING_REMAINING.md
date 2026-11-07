@@ -187,7 +187,7 @@
 | `MixinCrossbowItem` | 弩的特殊弹药处理 | 平台不适用（1.7.10 无弩） |
 | `MixinEntityRenderer` | 自定义铭牌显示规则 | 未实现，见第 11 条 |
 | `MixinItemStack` | 按玩家自定义物品显示名称 | 未实现 |
-| `MixinLivingEntity` / `MixinPlayer` | 盾牌不可被斧禁用、末地锚重生逻辑 | 盾牌机制不同（跳过）；末地锚重生**已实现**，见 `MixinEntityPlayerSpawn` |
+| `MixinLivingEntity` / `MixinPlayer` | 盾牌格挡判定、不可被斧禁用、末地锚重生逻辑 | 格挡**已实现**（`MixinEntityPlayerShieldBlock` 取消 `attackEntityFrom`）；斧禁用 1.7.10 无此机制（跳过）；末地锚重生**已实现**，见 `MixinEntityPlayerSpawn` |
 | `MixinPlayerList` | 自定义重生处理 | **已实现**（改为 `MixinServerConfigurationManager` + `MixinWorldProvider`，见第 21 条） |
 | `MixinMobEffect` | 药水效果 tick 修改 | 未实现 |
 | `MixinShulker` | 被末影之屠命中的潜影贝暂停传送 | **已实现**（`MixinEtFuturumShulkerTeleport` 注入 Et Futurum `EntityShulker#tryTeleportToNewPosition`，它不走 `EnderTeleportEvent`） |
@@ -324,6 +324,7 @@
 - 以太套装：护盾的投射物免疫、近战减伤、击退与音效只做了静态核对；新增的 `ShieldAuraLayer` 光晕渲染未做游戏内视觉验证（1.7.10 用 `RenderPlayerEvent.Specials.Post` + GL 复刻，无法在无头环境确认实际观感）。
 - 壮丽鞘翅：`MixinEtFuturumElytra` / `MixinEtFuturumElytraTakeoff` 已由客户端启动日志确认注入成功（`Mixing ... into ganymedes01.etfuturum.items.equipment.ItemArmorElytra` / `...network.StartElytraFlyingHandler`），但「空手跳→起飞→按住跳跃加速→落地」整条链未在游戏内跑过；`MixinEtFuturumElytraLayer` 目标类只在渲染玩家时加载，翅膀贴图/裁剪同样未经肉眼确认。
 - 末影之屠：补上潜影贝/末影螨的「末地居民」判定、潜影贝传送封锁与黑曜石修复。`MixinEtFuturumShulkerTeleport` 已由启动日志确认注入（`Mixing ... into ganymedes01.etfuturum.entities.EntityShulker`），但「命中潜影贝 → 400 tick 内不传送」与铁砧黑曜石修复未做游戏内验证。
+- 烈焰之傲壁垒：格挡此前**完全没有接上**（`SuperpositionHandler#onDamageSourceBlocking` 是死代码），现由 `MixinEntityPlayerShieldBlock` 在 `EntityPlayer#attackEntityFrom` 头部取消正面命中，并补齐烈焰之力叠加、点燃攻击者、盾牌耐久损耗与背后 150% 伤害；注入已由启动日志确认（`Mixing MixinEntityPlayerShieldBlock ... into net.minecraft.entity.player.EntityPlayer`）。未做游戏内实测：举盾挡正面/侧面/背后、攻击者是否着火、烈焰之力层数与被打断、耐久消耗速度。
 
 ---
 
