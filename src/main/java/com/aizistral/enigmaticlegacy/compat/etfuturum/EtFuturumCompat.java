@@ -8,6 +8,7 @@ import ganymedes01.etfuturum.ModBlocks;
 import ganymedes01.etfuturum.ModItems;
 import ganymedes01.etfuturum.api.elytra.IElytraPlayer;
 import ganymedes01.etfuturum.configuration.configs.ConfigExperiments;
+import ganymedes01.etfuturum.entities.EntityEndermite;
 import ganymedes01.etfuturum.entities.EntityHusk;
 import ganymedes01.etfuturum.entities.EntityShulker;
 
@@ -23,6 +24,18 @@ public final class EtFuturumCompat {
 
     public static boolean isShulker(EntityLivingBase entity) {
         return entity instanceof EntityShulker;
+    }
+
+    public static boolean isEndermite(EntityLivingBase entity) {
+        return entity instanceof EntityEndermite;
+    }
+
+    /**
+     * End dwellers that only exist through Et Futurum on 1.7.10 - vanilla itself has nothing
+     * beyond Endermen and the Ender Dragon here.
+     */
+    public static boolean isExtraEndDweller(EntityLivingBase entity) {
+        return isShulker(entity) || isEndermite(entity);
     }
 
     public static boolean isElytraFlying(EntityLivingBase entity) {

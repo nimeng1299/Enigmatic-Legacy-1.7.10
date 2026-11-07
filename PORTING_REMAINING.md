@@ -190,7 +190,8 @@
 | `MixinLivingEntity` / `MixinPlayer` | 盾牌不可被斧禁用、末地锚重生逻辑 | 盾牌机制不同（跳过）；末地锚重生**已实现**，见 `MixinEntityPlayerSpawn` |
 | `MixinPlayerList` | 自定义重生处理 | **已实现**（改为 `MixinServerConfigurationManager` + `MixinWorldProvider`，见第 21 条） |
 | `MixinMobEffect` | 药水效果 tick 修改 | 未实现 |
-| `MixinVillager` / `MixinVillagerEntity` / `MixinHoglinTasks` / `MixinPiglinTasks` / `MixinPhantomSpawner` / `MixinShulker` | 生物 AI、交易价格、生成调整 | 大多为 1.20 生物/机制，1.7.10 无对应实体（猪灵、幻翼、潜影贝） |
+| `MixinShulker` | 被末影之屠命中的潜影贝暂停传送 | **已实现**（`MixinEtFuturumShulkerTeleport` 注入 Et Futurum `EntityShulker#tryTeleportToNewPosition`，它不走 `EnderTeleportEvent`） |
+| `MixinVillager` / `MixinVillagerEntity` / `MixinHoglinTasks` / `MixinPiglinTasks` / `MixinPhantomSpawner` | 生物 AI、交易价格、生成调整 | 大多为 1.20 生物/机制，1.7.10 无对应实体（猪灵、幻翼） |
 | `MixinStarterGear` | 首次登录发放新手装备 | **已实现**（登录事件，日志可见 “Granting starter gear”） |
 | `MixinEnchantmentHelper` / `MixinBindingCurseEnchantment` | 绑定诅咒可作用于饰品 | **已实现**（`enchantments/EternalBindingCurse`） |
 | `MixinEnchantmentContainer` | 附魔台自定义行为 | 未实现，见第 3 条 |
@@ -322,6 +323,7 @@
 - 行刑者之斧：斩首概率公式与骷髅/凋灵骷髅/僵尸/苦力怕四条分支只做了静态核对；tooltip 新增的饰品抢夺加成、僵尸村民排除均未做游戏内验证。
 - 以太套装：护盾的投射物免疫、近战减伤、击退与音效只做了静态核对；新增的 `ShieldAuraLayer` 光晕渲染未做游戏内视觉验证（1.7.10 用 `RenderPlayerEvent.Specials.Post` + GL 复刻，无法在无头环境确认实际观感）。
 - 壮丽鞘翅：`MixinEtFuturumElytra` / `MixinEtFuturumElytraTakeoff` 已由客户端启动日志确认注入成功（`Mixing ... into ganymedes01.etfuturum.items.equipment.ItemArmorElytra` / `...network.StartElytraFlyingHandler`），但「空手跳→起飞→按住跳跃加速→落地」整条链未在游戏内跑过；`MixinEtFuturumElytraLayer` 目标类只在渲染玩家时加载，翅膀贴图/裁剪同样未经肉眼确认。
+- 末影之屠：补上潜影贝/末影螨的「末地居民」判定、潜影贝传送封锁与黑曜石修复。`MixinEtFuturumShulkerTeleport` 已由启动日志确认注入（`Mixing ... into ganymedes01.etfuturum.entities.EntityShulker`），但「命中潜影贝 → 400 tick 内不传送」与铁砧黑曜石修复未做游戏内验证。
 
 ---
 

@@ -8,7 +8,9 @@ import javax.annotation.Nullable;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.EnumRarity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.ResourceLocation;
@@ -21,6 +23,7 @@ import com.aizistral.enigmaticlegacy.api.materials.EnigmaticMaterials;
 import com.aizistral.enigmaticlegacy.compat.ForgeRegistries;
 import com.aizistral.enigmaticlegacy.compat.Screen;
 import com.aizistral.enigmaticlegacy.compat.TooltipFlag;
+import com.aizistral.enigmaticlegacy.compat.etfuturum.EtFuturumCompat;
 import com.aizistral.enigmaticlegacy.compat.text.Component;
 import com.aizistral.enigmaticlegacy.helpers.ItemLoreHelper;
 import com.aizistral.enigmaticlegacy.items.generic.ItemBaseTool;
@@ -28,12 +31,15 @@ import com.aizistral.enigmaticlegacy.registries.EnigmaticTabs;
 import com.aizistral.omniconfig.wrappers.Omniconfig;
 import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public class EnderSlayer extends ItemBaseTool implements ICursed, ICreativeTabMember {
 
     public static final List<ResourceLocation> endDwellers = new ArrayList<>();
+
+    private static final String ET_FUTURUM_MODID = "etfuturum";
 
     public static Omniconfig.IntParameter attackDamage;
     public static Omniconfig.DoubleParameter attackSpeed;
@@ -89,8 +95,23 @@ public class EnderSlayer extends ItemBaseTool implements ICursed, ICreativeTabMe
     public boolean isEndDweller(EntityLivingBase entity) {
         if (entity instanceof net.minecraft.entity.monster.EntityEnderman
             || entity instanceof net.minecraft.entity.boss.EntityDragon) return true;
-        else return endDwellers.stream()
+
+        // Shulkers and endermites are vanilla on 1.20, but on 1.7.10 they only exist through
+        // Et Futurum - hence the mod-loaded guard before touching its classes.
+        if (Loader.isModLoaded(ET_FUTURUM_MODID) && EtFuturumCompat.isExtraEndDweller(entity)) return true;
+
+        return endDwellers.stream()
             .anyMatch(ForgeRegistries.ENTITY_TYPES.getKey(entity)::equals);
+    }
+
+    /**
+     * 1.20 gets this from {@code EnigmaticMaterials.ENDER_SLAYER}'s repair ingredient
+     * ({@code Ingredient.of(Blocks.OBSIDIAN)}); 1.7.10 {@code ToolMaterial}s created through
+     * {@code EnumHelper} carry no repair item at all, so it has to be stated explicitly.
+     */
+    @Override
+    public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
+        return repair != null && repair.getItem() == Item.getItemFromBlock(Blocks.obsidian);
     }
 
     @SideOnly(Side.CLIENT)

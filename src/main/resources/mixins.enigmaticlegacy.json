@@ -15,6 +15,7 @@
         "MixinEtFuturumContainerEnchantment",
         "MixinEtFuturumElytra",
         "MixinEtFuturumElytraTakeoff",
+        "MixinEtFuturumShulkerTeleport",
         "MixinEntityLivingBase",
         "MixinEntityPlayer",
         "MixinEntityPlayerArmor",

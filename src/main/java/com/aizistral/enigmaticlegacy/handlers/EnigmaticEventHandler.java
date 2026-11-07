@@ -787,7 +787,7 @@ public class EnigmaticEventHandler {
     public void onLivingUpdate(LivingUpdateEvent event) {
         if (event.entityLiving.worldObj.isRemote) return;
 
-        if (event.entityLiving instanceof EntityEnderman) {
+        if (event.entityLiving instanceof EntityEnderman || isShulker(event.entityLiving)) {
             NBTTagCompound data = event.entityLiving.getEntityData();
             int cooldown = data.getInteger("ELTeleportBlock");
 
@@ -1125,7 +1125,7 @@ public class EnigmaticEventHandler {
                         }
                     }
 
-                    if (victim instanceof EntityEnderman) {
+                    if (victim instanceof EntityEnderman || isShulker(victim)) {
                         victim.getEntityData()
                             .setInteger("ELTeleportBlock", 400);
                     }
