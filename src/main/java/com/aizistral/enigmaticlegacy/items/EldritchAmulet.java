@@ -18,6 +18,7 @@ import net.minecraft.world.World;
 import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.api.items.IEldritch;
 import com.aizistral.enigmaticlegacy.compat.Attribute;
+import com.aizistral.enigmaticlegacy.compat.AttributeMap;
 import com.aizistral.enigmaticlegacy.compat.AttributeModifier;
 import com.aizistral.enigmaticlegacy.compat.Attributes;
 import com.aizistral.enigmaticlegacy.compat.Enchantments;
@@ -113,20 +114,39 @@ public class EldritchAmulet extends AscensionAmulet implements IEldritch {
 
     @Override
     public void curioTick(SlotContext context, ItemStack stack) {
-        if (context.entity() instanceof EntityPlayerMP player && player.ticksExisted % 5 == 0
-            && SuperpositionHandler.isTheWorthyOne(player)) {
-            List<EntityLivingBase> entities = SuperpositionHandler
-                .getObservedEntities(player, player.worldObj, 3, 128, false);
-            for (EntityLivingBase entity : entities) {
-                if (entity instanceof EntityPlayerMP otherPlayer && SuperpositionHandler.hasCurio(otherPlayer, this)
-                    && SuperpositionHandler.isTheWorthyOne(otherPlayer)) {
-                    continue;
-                }
+        if (context.entity() instanceof EntityPlayerMP player) {
+            // 1.20 lets Curios push getAttributeModifiers() onto the player's attribute map while the
+            // curio is equipped. The 1.7.10 compat layer only folds ARMOR and LUCK out of equipped
+            // curios (see CuriosApi#getEquippedArmorBonus), so the advertised +3 attack damage would
+            // never reach SharedMonsterAttributes.attackDamage and would be a dead tooltip line.
+            AttributeMap.of(player)
+                .addTransientAttributeModifiers(this.getAttributeModifiers(context, player.getUniqueID(), stack));
 
-                entity.addPotionEffect(new PotionEffect(MobEffects.MOVEMENT_SLOWDOWN, 10, 1));
-                entity.addPotionEffect(new PotionEffect(MobEffects.DIG_SLOWDOWN, 10, 1));
-                entity.addPotionEffect(new PotionEffect(MobEffects.WEAKNESS, 10, 1));
+            if (player.ticksExisted % 5 == 0 && SuperpositionHandler.isTheWorthyOne(player)) {
+                List<EntityLivingBase> entities = SuperpositionHandler
+                    .getObservedEntities(player, player.worldObj, 3, 128, false);
+
+                for (EntityLivingBase entity : entities) {
+                    if (entity instanceof EntityPlayerMP otherPlayer && SuperpositionHandler.hasCurio(otherPlayer, this)
+                        && SuperpositionHandler.isTheWorthyOne(otherPlayer)) {
+                        continue;
+                    }
+
+                    entity.addPotionEffect(new PotionEffect(MobEffects.MOVEMENT_SLOWDOWN, 10, 1));
+                    entity.addPotionEffect(new PotionEffect(MobEffects.DIG_SLOWDOWN, 10, 1));
+                    entity.addPotionEffect(new PotionEffect(MobEffects.WEAKNESS, 10, 1));
+                }
             }
+        }
+    }
+
+    @Override
+    public void onUnequip(SlotContext context, ItemStack newStack, ItemStack stack) {
+        super.onUnequip(context, newStack, stack);
+
+        if (context.entity() instanceof EntityPlayerMP player) {
+            AttributeMap.of(player)
+                .removeAttributeModifiers(this.getAttributeModifiers(context, player.getUniqueID(), stack));
         }
     }
 

@@ -2338,8 +2338,17 @@ public class EnigmaticEventHandler {
      * through death, no matter what captures the rest of the loot. Their drops are therefore pulled
      * out of the event and equipped again right away, which also keeps the client-side bauble
      * inventory in sync since the packet is still sent for the player's current entity id.
+     *
+     * <p>
+     * The Eldritch Amulet additionally keeps everything else the player wears: 1.20 installs a
+     * blanket {@code DropRule.ALWAYS_KEEP} override for all curios that are not cursed with Vanishing
+     * in {@code EnigmaticEventHandler#onCurioDrops}. 1.7.10 has no such event, so the same exemption
+     * is applied here. Vanishing Curse does not exist on this version, hence
+     * {@code compat.Enchantments.VANISHING_CURSE} is always {@code null} and the check below simply
+     * keeps the whole curio set.
      */
     private void preserveDeathPersistentCurios(EntityPlayerMP player, PlayerDropsEvent event) {
+        boolean keepAllCurios = POSTMORTAL_POSESSIONS.containsEntry(player, EnigmaticItems.ELDRITCH_AMULET);
         Iterator<EntityItem> iterator = event.drops.iterator();
 
         while (iterator.hasNext()) {
@@ -2359,7 +2368,11 @@ public class EnigmaticEventHandler {
                 event.recentlyHit,
                 stack);
 
-            if (dropRule != ICurio.DropRule.ALWAYS_KEEP) {
+            boolean keep = dropRule == ICurio.DropRule.ALWAYS_KEEP
+                || keepAllCurios && com.aizistral.enigmaticlegacy.compat.Enchantments
+                    .getEnchantmentLevel(com.aizistral.enigmaticlegacy.compat.Enchantments.VANISHING_CURSE, stack) <= 0;
+
+            if (!keep) {
                 continue;
             }
 
