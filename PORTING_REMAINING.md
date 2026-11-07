@@ -191,7 +191,7 @@
 | `MixinPlayerList` | 自定义重生处理 | **已实现**（改为 `MixinServerConfigurationManager` + `MixinWorldProvider`，见第 21 条） |
 | `MixinMobEffect` | 药水效果 tick 修改 | 未实现 |
 | `MixinShulker` | 被末影之屠命中的潜影贝暂停传送 | **已实现**（`MixinEtFuturumShulkerTeleport` 注入 Et Futurum `EntityShulker#tryTeleportToNewPosition`，它不走 `EnderTeleportEvent`） |
-| `MixinVillager` / `MixinVillagerEntity` / `MixinHoglinTasks` / `MixinPiglinTasks` / `MixinPhantomSpawner` | 生物 AI、交易价格、生成调整 | 大多为 1.20 生物/机制，1.7.10 无对应实体（猪灵、幻翼） |
+| `MixinVillager` / `MixinVillagerEntity` / `MixinHoglinTasks` / `MixinPiglinTasks` / `MixinPhantomSpawner` | 生物 AI、交易价格、生成调整 | 大多为 1.20 生物/机制，1.7.10 无对应实体（猪灵、幻翼）。其中 `MixinVillager#onGolemCreation`（荒芜之负阻止村庄生成铁傀儡）**已实现**：1.7.10 村庄铁傀儡由 `Village#tick` 直接 `spawnEntityInWorld`，不经 `LivingSpawnEvent.CheckSpawn`，故改为 `MixinVillage` 重定向该调用 |
 | `MixinStarterGear` | 首次登录发放新手装备 | **已实现**（登录事件，日志可见 “Granting starter gear”） |
 | `MixinEnchantmentHelper` / `MixinBindingCurseEnchantment` | 绑定诅咒可作用于饰品 | **已实现**（`enchantments/EternalBindingCurse`） |
 | `MixinEnchantmentContainer` | 附魔台自定义行为 | 未实现，见第 3 条 |

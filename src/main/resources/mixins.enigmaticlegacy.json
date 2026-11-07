@@ -30,6 +30,7 @@
         "MixinPotionHelper",
         "MixinServerConfigurationManager",
         "MixinTileEntityBrewingStand",
+        "MixinVillage",
         "MixinWeightedRandomChestContent",
         "MixinWorldProvider"
     ],
