@@ -30,6 +30,12 @@ public class EnigmaticLootModifiers {
     private static final String[] PYRAMID_CHESTS = { ChestGenHooks.PYRAMID_DESERT_CHEST,
         ChestGenHooks.PYRAMID_JUNGLE_CHEST };
 
+    // 1.20's VILLAGE_TEMPLE does not exist on 1.7.10; the blacksmith is the only village chest there.
+    private static final String[] ICHOR_VILLAGE_CHESTS = { ChestGenHooks.VILLAGE_BLACKSMITH };
+
+    private static final String[] ICHOR_BOTTLE_CHESTS = { ChestGenHooks.VILLAGE_BLACKSMITH,
+        ChestGenHooks.PYRAMID_DESERT_CHEST, ChestGenHooks.PYRAMID_JUNGLE_CHEST };
+
     // 1.7.10 has no underwater ruins, shipwrecks or buried treasure; these hooks only
     // yield loot once a structure backport mod populates/reads the same categories.
     private static final String[] WATER_DUNGEON_CHESTS = { "underwaterRuinBig", "underwaterRuinSmall",
@@ -128,6 +134,14 @@ public class EnigmaticLootModifiers {
         } else if (contains(END_CITY_CHESTS, category)) {
             appendLiterature(random, inventory, EnigmaticItems.CORRUPTED_TOME, 1, 4, 200, 1000, -7, 10);
         }
+
+        /*
+         * The Ichor Bottle pool is independent of the literature ones - pyramid chests carry both -
+         * so it is evaluated separately instead of joining the else-if chain above.
+         */
+        if (category != null && contains(ICHOR_BOTTLE_CHESTS, category)) {
+            appendIchorBottle(random, inventory, category);
+        }
     }
 
     private static void appendLiterature(Random random, IInventory inventory, RevelationTome tome, int minPoints,
@@ -146,6 +160,35 @@ public class EnigmaticLootModifiers {
                 tome.createTome(
                     minPoints + random.nextInt(maxPoints - minPoints + 1),
                     minXp + random.nextInt(maxXp - minXp + 1)));
+        }
+    }
+
+    /**
+     * Mirrors the Ichor Bottle entry of 1.20's {@code spellstones} pools. That pool is added next to
+     * the vanilla contents with {@code UniformGenerator.between(-10, 1)} rolls: only a roll of 1 -
+     * one in twelve - actually produces an entry, so the pool stacks on top of the chest instead of
+     * replacing an entry. A single weighted pick then decides what it produces; the Ichor Bottle
+     * competes with Angel's Blessing at 100/100 in the village temple and with Golem Heart 35 /
+     * Angel's Blessing 65 at 65 in desert and jungle pyramids. Only the Ichor Bottle outcome is
+     * materialised here, since the other two items are already injected through ChestGenHooks.
+     */
+    private static void appendIchorBottle(Random random, IInventory inventory, String category) {
+        if (!OmniconfigHandler.isItemEnabled(EnigmaticItems.ICHOR_BOTTLE)) return;
+
+        int rolls = -10 + random.nextInt(12);
+
+        if (rolls <= 0) return;
+
+        boolean village = contains(ICHOR_VILLAGE_CHESTS, category);
+        int ichorWeight = village ? 100 : 65;
+        int totalWeight = village ? 200 : 165;
+
+        if (random.nextInt(totalWeight) >= ichorWeight) return;
+
+        int slot = findRandomEmptySlot(random, inventory);
+
+        if (slot >= 0) {
+            inventory.setInventorySlotContents(slot, new ItemStack(EnigmaticItems.ICHOR_BOTTLE));
         }
     }
 

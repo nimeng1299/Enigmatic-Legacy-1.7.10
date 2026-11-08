@@ -34,6 +34,7 @@ public class SpecialLootModifier {
      */
     private static final String ARCHITECT_EYE_TAG = "LootedArchitectEye";
     private static final String ASTRAL_FRUIT_TAG = "LootedFirstEndCityChest";
+    private static final String ICHOR_BOTTLE_TAG = "LootedIchorBottle";
 
     private static final int END_DIMENSION_ID = 1;
 
@@ -75,6 +76,7 @@ public class SpecialLootModifier {
 
         SpecialLootModifier.grantArchitectEye(player, inventory);
         SpecialLootModifier.grantAstralFruit(player, inventory);
+        SpecialLootModifier.handleIchorBottle(player, inventory);
     }
 
     /**
@@ -124,6 +126,42 @@ public class SpecialLootModifier {
         if (!SpecialLootModifier.insertStack(inventory, player.worldObj.rand, fruit)) return;
 
         SuperpositionHandler.setPersistentBoolean(player, ASTRAL_FRUIT_TAG, true);
+    }
+
+    /**
+     * Mirrors the Ichor Bottle branch of the 1.20 loot modifier, where a player may only ever get
+     * one bottle: 1.20 filters the loot as it is generated for the player opening the container.
+     * 1.7.10 fills chests during world generation, so the equivalent is to strip the bottle from
+     * the shared chest when an already-looted player opens it. That ends up the same way, since on
+     * 1.20 the contents are generated once, for whoever opens the chest first, and then locked in.
+     * <p>
+     * Only structure chests flagged by {@link #markLootChest} are touched, so a bottle a player
+     * stashes in their own chest is never consumed or removed.
+     */
+    private static void handleIchorBottle(EntityPlayerMP player, IInventory inventory) {
+        if (!OmniconfigHandler.isItemEnabled(EnigmaticItems.ICHOR_BOTTLE)) return;
+        if (!(inventory instanceof ILootChest) || !((ILootChest) inventory).isEnigmaticLootChest()) return;
+
+        int slot = SpecialLootModifier.findIchorBottleSlot(inventory);
+
+        if (slot < 0) return;
+
+        if (SuperpositionHandler.hasPersistentTag(player, ICHOR_BOTTLE_TAG)) {
+            inventory.setInventorySlotContents(slot, null);
+            inventory.markDirty();
+        } else {
+            SuperpositionHandler.setPersistentBoolean(player, ICHOR_BOTTLE_TAG, true);
+        }
+    }
+
+    private static int findIchorBottleSlot(IInventory inventory) {
+        for (int slot = 0; slot < inventory.getSizeInventory(); slot++) {
+            ItemStack stack = inventory.getStackInSlot(slot);
+
+            if (stack != null && stack.getItem() == EnigmaticItems.ICHOR_BOTTLE) return slot;
+        }
+
+        return -1;
     }
 
     private static boolean insertStack(IInventory inventory, Random random, ItemStack stack) {

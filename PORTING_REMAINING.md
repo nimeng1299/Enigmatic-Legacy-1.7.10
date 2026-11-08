@@ -17,11 +17,11 @@
 | 奖励 | 触发条件 | 1.7.10 可行性 |
 | --- | --- | --- |
 | Architect Eye（`ENIGMATIC_EYE`） | 玩家第一次打开任意原版箱子（持久标记 `LootedArchitectEye`） | **已实现**（`MixinWeightedRandomChestContent` 标记结构战利品箱 + `MixinEntityPlayerMP` 开箱时注入；1.7.10 无战利品表，按「结构生成时填充过的箱子」近似） |
-| Ichor Bottle | 每人仅能获得一次（持久标记 `LootedIchorBottle`），重复生成时移除 | 可做 |
+| Ichor Bottle | 每人仅能获得一次（持久标记 `LootedIchorBottle`），重复生成时移除 | **已实现**（`EnigmaticLootModifiers#onChestContentsGenerated` 按 1.20 的独立池概率注入村庄铁匠铺 / 沙漠神殿 / 丛林神庙；`SpecialLootModifier#onChestOpened` 负责每人一次） |
 | Astral Fruit | 诅咒玩家第一次打开末地城宝箱（持久标记 `LootedFirstEndCityChest`） | **已实现**（`MixinEntityPlayerMP` 拦截 `displayGUIChest` + `SpecialLootModifier#onChestOpened`；1.7.10 无末地城，按「末地维度内的任意箱子方块」近似） |
 | Heart of the Earth | 考古可疑方块 3%（`CustomLoot.EarthHeartChance`）；同时以权重 7 注入上世界地牢宝箱 | 地牢宝箱途径**已实现**（`ChestGenHooks`）；考古平台不适用（1.7.10 无考古系统） |
 
-现状：`objects/SpecialLootModifier` 承载全部一次性开箱奖励；**Earth Heart 的地牢宝箱注入已实现**（`EnigmaticLootModifiers.register()`，六类地牢宝箱，权重 7，受 `CustomDungeonLootEnabled` 与 `EarthHeartEnabled` 控制）；Architect Eye 与 Astral Fruit **已实现**；Ichor Bottle 仍**没有任何战利品注入逻辑**。
+现状：`objects/SpecialLootModifier` 承载全部一次性开箱奖励；**Earth Heart 的地牢宝箱注入已实现**（`EnigmaticLootModifiers.register()`，六类地牢宝箱，权重 7，受 `CustomDungeonLootEnabled` 与 `EarthHeartEnabled` 控制）；Architect Eye、Astral Fruit 与 Ichor Bottle **均已实现**（详见第 29 条）。
 
 补充：**Architect Eye（休眠之眼）已实现**。1.7.10 在结构生成时就滚好箱子内容，没有"开箱时"的战利品表，因此分两步：
 1. `mixin/MixinWeightedRandomChestContent` 在 `WeightedRandomChestContent#generateChestContents` 返回时调用 `SpecialLootModifier#markLootChest`，给该箱子打上 `EnigmaticLootChest` 标记 —— 这是 1.20 里「箱子战利品表 id 以 `minecraft:chests/` 开头」的等价判据，用来把地牢/矿洞/要塞/神殿/村庄等结构箱与玩家自建储物箱区分开。
@@ -34,7 +34,7 @@
 
 补充：1.20 主世界地牢 `epic` 池中的**铁指环（权重 20）已补齐**（同一 `EnigmaticLootModifiers.register()`，受 `CustomDungeonLootEnabled` 与 `IronRingEnabled` 双重控制）；同池的磁铁戒指、急迫药水、抄录笔、铁工具与杂项物品仍未注入。
 
-建议实现（仅剩 Ichor Bottle）：沿用同一 `SpecialLootModifier#onChestOpened` 钩子——箱子生成时若滚出灵液瓶则无法在开箱时移除，因此需要在 `MixinWeightedRandomChestContent` 中直接拦截：把 Ichor Bottle 从结构箱战利品里剔除，改为按玩家持久标记 `LootedIchorBottle` 在首次开箱时注入一次。
+**Ichor Bottle 已实现**（第 29 条）：不在 `MixinWeightedRandomChestContent` 里剔除，而是在该 mixin 已经挂好的 `RETURN` 钩子上，按 1.20 独立池的概率模型追加；「每人一次」由 `SpecialLootModifier#onChestOpened` 按持久标记 `LootedIchorBottle` 处理（已拿过的玩家开箱时把瓶子从箱子里移除）。
 
 ### 2. 经验掉落修正 — 部分实现
 
@@ -360,6 +360,13 @@
     - **附带发现（未做）**：1.20 会把徽章注入沙漠神殿战利品池（`EnigmaticEventHandler` 的 `DESERT_PYRAMID` 分支），1.7.10 没有对应注入。这属于获取途径而非物品效果，需要时可用 `ChestGenHooks.PYRAMID_DESERT_CHEST` 补。
     - **未实测**：铭牌渲染（假名、真名小字、自己可见、潜行切换）只做了 `build` + `runClient` 启动验证（三个注入点均 `require = 1`，客户端无 `InvalidInjectionException`），未进世界实际观察。
 
+29. **灵液瓶（Ichor Bottle / `ichor_bottle`）的获取**：1.20 在 `onLootTablesLoaded` 里把它塞进两个 `spellstones` 池——村庄教堂（`VILLAGE_TEMPLE`，与天使祝福 100/100）和沙漠神殿 / 丛林神庙（与傀儡之心 35、天使祝福 65 抢权重 65）。1.7.10 此前**没有任何战利品注入**，只能用创造模式取得。本次补齐：
+
+    - **注入**：1.20 的池是独立池，`rolls` 取 `UniformGenerator.between(-10, 1)`，只有 roll 到 1（十二分之一）才产出条目，因此它是「叠加」在原版内容上而非替换条目（第 61 行对书本池有同样的解释）。`EnigmaticLootModifiers#onChestContentsGenerated` 用同一模型追加：`-10 + rand.nextInt(12)`，命中后再按池内权重抽一次（村庄 100/200、金字塔 65/165），只落地灵液瓶这一种结果——另外两种物品已经通过 `ChestGenHooks` 混池注入，不重复生成。村庄箱子在 1.7.10 只有 `ChestGenHooks.VILLAGE_BLACKSMITH`（没有 1.20 的教堂结构），沙漠 / 丛林分别对应 `PYRAMID_DESERT_CHEST` / `PYRAMID_JUNGLE_CHEST`。
+    - **每人一次**：1.20 在生成战利品时按 `LootedIchorBottle` 过滤——已经拿过的玩家开箱就把灵液瓶从这份战利品里删掉，否则出现即打标记。1.7.10 的箱子内容是世界生成时就滚好的，因此在 `SpecialLootModifier#onChestOpened` 做等价处理：目标为带 `ILootChest` 标记的结构箱时，玩家已有标记就地从库存移除，否则打标记。玩家自建的箱子不受影响。**偏差**：1.20 只在箱子首次生成内容时判断一次，之后打开的人不再受自己标记影响；1.7.10 是每次开箱都判断，所以如果第一个开箱的人已经拿过，瓶子会被清掉、后来者也拿不到——方向与 1.20 一致（都是「已拿过的人不会让它流出去」），但会略降低总供给。
+    - **实测**：临时探针（已删除）用 `WeightedRandomChestContent.generateChestContents` 各生成 20000 个箱子抽样，村庄铁匠铺 **3.85%**、沙漠神殿 **3.17%**、丛林神庙 **3.28%**（理论 4.17% / 3.28%；村庄略低是箱子满时找不到空槽所致），与 1.20 的池概率一致。
+    - **未做**：真实世界的村庄 / 神殿开箱实测；`+1 charm 槽` 仍受第 10 条的平台限制。
+
 ---
 
 ## 七、已实现但未完整实测
@@ -394,7 +401,7 @@
 
 1. 末影珍珠伤害免疫（改动最小，立即可做）。
 2. ~~深渊之心龙掉落 + `WITH_DRAGONS` 引言~~ — 已完成。
-3. ~~特殊战利品注入（Astral Fruit）~~ — 已完成；Architect Eye / Ichor Bottle 仍待做。
+3. ~~特殊战利品注入（Astral Fruit / Architect Eye / Ichor Bottle）~~ — 已完成。
 4. 经验掉落修正（Mixin）。
 5. 引言触发（凋灵/末影龙召唤、末地门）。
 6. Toast 队列渲染。
