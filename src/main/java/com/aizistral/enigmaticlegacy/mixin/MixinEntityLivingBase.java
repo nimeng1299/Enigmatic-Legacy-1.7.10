@@ -9,7 +9,9 @@ import net.minecraft.util.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -17,6 +19,7 @@ import com.aizistral.enigmaticlegacy.compat.ForgeRegistries;
 import com.aizistral.enigmaticlegacy.compat.PotionEffects;
 import com.aizistral.enigmaticlegacy.handlers.EnigmaticEventHandler;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
+import com.aizistral.enigmaticlegacy.items.EnigmaticAmulet.AmuletColor;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
 
 /**
@@ -71,25 +74,57 @@ public abstract class MixinEntityLivingBase {
     }
 
     /**
-     * Non-Euclidean Cube: {@code +100%} swim speed.
+     * Swim speed: {@code +100%} from the Non-Euclidean Cube, {@code +25%} from a BLUE Enigmatic
+     * Amulet (the Ascension Amulet counts as every color).
      * <p>
-     * 1.20 expresses this as a {@code ForgeMod.SWIM_SPEED} modifier, but 1.7.10 has no such
+     * 1.20 expresses these as {@code ForgeMod.SWIM_SPEED} modifiers, but 1.7.10 has no such
      * attribute - water movement is hardcoded to {@code moveFlying(strafe, forward, 0.02F)} in this
-     * very method. Doubling that acceleration double the terminal swimming speed (drag stays at
-     * 0.8), which is exactly what a {@code +100%} multiplier does on 1.20. The redirect only
-     * touches the first {@code moveFlying} call, i.e. the water branch; lava and walking keep
-     * their original values.
+     * very method. Scaling that acceleration scales the terminal swimming speed (drag stays at
+     * 0.8). MULTIPLY_TOTAL modifiers add up on 1.20, so the sources are summed rather than
+     * multiplied: cube + blue amulet gives {@code 0.02F * 2.25F}. The redirect only touches the
+     * first {@code moveFlying} call, i.e. the water branch; lava and walking keep their original
+     * values.
      */
     @Redirect(
         method = "moveEntityWithHeading",
         at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/entity/EntityLivingBase;moveFlying(FFF)V"))
     private void enigmaticlegacy$cubeSwimSpeed(EntityLivingBase self, float strafe, float forward, float friction) {
-        if (self instanceof EntityPlayer player && !player.capabilities.isFlying
-            && SuperpositionHandler.hasCurio(player, EnigmaticItems.THE_CUBE)) {
-            friction *= 2.0F;
+        if (self instanceof EntityPlayer player && !player.capabilities.isFlying) {
+            float factor = 1.0F;
+
+            if (SuperpositionHandler.hasCurio(player, EnigmaticItems.THE_CUBE)) {
+                factor += 1.0F;
+            }
+
+            if (EnigmaticItems.ENIGMATIC_AMULET.hasColor(player, AmuletColor.BLUE)) {
+                factor += 0.25F;
+            }
+
+            friction *= factor;
         }
 
         self.moveFlying(strafe, forward, friction);
+    }
+
+    /**
+     * MAGENTA Enigmatic Amulet: {@code -25%} gravity (the Ascension Amulet counts as every color).
+     * <p>
+     * 1.20 applies this as a {@code ForgeMod.ENTITY_GRAVITY} MULTIPLY_TOTAL modifier; 1.7.10
+     * hardcodes the {@code 0.08D} fall acceleration in the air branch of
+     * {@code EntityLivingBase#moveEntityWithHeading}. Scaling that constant by 0.75 is equivalent.
+     * The {@code 0.02D} values in the water/lava branches are buoyancy, not gravity, and are left
+     * alone; {@code 0.08D} occurs exactly once in this method.
+     */
+    @ModifyConstant(method = "moveEntityWithHeading", constant = @Constant(doubleValue = 0.08D), require = 1)
+    private double enigmaticlegacy$amuletGravity(double gravity) {
+        EntityLivingBase self = (EntityLivingBase) (Object) this;
+
+        if (self instanceof EntityPlayer player
+            && EnigmaticItems.ENIGMATIC_AMULET.hasColor(player, AmuletColor.MAGENTA)) {
+            return gravity * 0.75D;
+        }
+
+        return gravity;
     }
 
 }

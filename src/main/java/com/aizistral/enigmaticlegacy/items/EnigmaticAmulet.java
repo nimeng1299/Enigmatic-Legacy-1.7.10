@@ -280,6 +280,11 @@ public class EnigmaticAmulet extends ItemBaseCurio {
         }
     }
 
+    /**
+     * 1.20 also adds ForgeMod.ENTITY_GRAVITY (MAGENTA, -25%) and ForgeMod.SWIM_SPEED (BLUE, +25%)
+     * here. Neither attribute exists on 1.7.10, so those two bonuses are applied to the player's
+     * movement directly by {@code MixinEntityLivingBase} instead of being dead attribute entries.
+     */
     public Multimap<Attribute, AttributeModifier> getCurrentModifiers(ItemStack amulet, EntityPlayer player) {
         Multimap<Attribute, AttributeModifier> atts = HashMultimap.create();
 
@@ -352,6 +357,15 @@ public class EnigmaticAmulet extends ItemBaseCurio {
             if (amulet != null) {
                 AttributeMap map = com.aizistral.enigmaticlegacy.compat.AttributeMap.of(player);
                 map.addTransientAttributeModifiers(this.getCurrentModifiers(amulet, player));
+            }
+
+            // 1.20 rolls VIOLET's +15% deflect chance in ProjectileImpactEvent, which 1.7.10 does
+            // not have. Angel's Blessing and the Non-Euclidean Cube each scan from their own
+            // curioTick; the amulet needs its own entry point, otherwise a player wearing only a
+            // VIOLET / Ascension amulet never deflects anything. AngelBlessing#getDeflectChance
+            // already sums every source into one roll, and its NBT guards keep it that way.
+            if (this.hasColor(player, AmuletColor.VIOLET)) {
+                AngelBlessing.deflectProjectilesAround(player);
             }
         }
     }

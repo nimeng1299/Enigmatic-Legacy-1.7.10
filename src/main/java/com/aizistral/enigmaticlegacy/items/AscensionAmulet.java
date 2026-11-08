@@ -100,6 +100,19 @@ public class AscensionAmulet extends EnigmaticAmulet {
         return super.getAllModifiers(slotContext.entity() instanceof EntityPlayer player ? player : null);
     }
 
+    /**
+     * 1.20 lets Curios push {@link #getAttributeModifiers} (every color at once) onto the player's
+     * attribute map. Baubles never calls that method, and the inherited {@code curioTick} falls back
+     * to {@code getCurrentModifiers}, which reads a color NBT tag this amulet never carries and so
+     * only ever grants the default RED attack bonus. Routing the shared tick through
+     * {@link #getAllModifiers} restores the AQUA sprint-speed bonus too. MAGENTA gravity and BLUE
+     * swim speed have no 1.7.10 attributes; they are emulated in {@code MixinEntityLivingBase}.
+     */
+    @Override
+    public Multimap<Attribute, AttributeModifier> getCurrentModifiers(ItemStack amulet, EntityPlayer player) {
+        return this.getAllModifiers(player);
+    }
+
     @Override
     public List<Component> getAttributesTooltip(List<Component> tooltips, ItemStack stack) {
         tooltips.clear();

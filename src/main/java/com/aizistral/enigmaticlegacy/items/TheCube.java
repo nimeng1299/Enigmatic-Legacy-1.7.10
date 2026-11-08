@@ -15,14 +15,10 @@ import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.entity.projectile.EntityFireball;
-import net.minecraft.entity.projectile.EntityThrowable;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
@@ -63,8 +59,6 @@ public class TheCube extends ItemSpellstoneCurio implements ISpellstone {
 
     /** Attack speed bonus the cube grants, as a fraction; see {@link #shortenHurtResistance}. */
     private static final double CUBE_ATTACK_SPEED_BONUS = 0.4D;
-    /** Same scan radius Angel's Blessing uses for its own deflection. */
-    private static final double DEFLECT_RANGE = 4.0D;
     /** 1.20 teleports within the world border, capped at 10000 blocks. */
     private static final int TELEPORT_RADIUS = 10000;
     /** Upper bound on chunk loads a single main-thread landing search may cause. */
@@ -338,7 +332,7 @@ public class TheCube extends ItemSpellstoneCurio implements ISpellstone {
             this.applySprintBonus(player);
 
             if (!player.worldObj.isRemote) {
-                this.deflectProjectiles(player);
+                AngelBlessing.deflectProjectilesAround(player);
             }
 
             if (context.entity() instanceof EntityPlayerMP serverPlayer
@@ -356,38 +350,6 @@ public class TheCube extends ItemSpellstoneCurio implements ISpellstone {
                         ex);
                 }
             }
-        }
-    }
-
-    /**
-     * 1.20 deflects projectiles from {@code ProjectileImpactEvent}, which 1.7.10 does not have, so
-     * incoming projectiles are bounced while still in flight - the approach Angel's Blessing already
-     * uses on this version. The 35% contribution is summed with Angel's Blessing by
-     * {@link AngelBlessing#getDeflectChance}, and the shared NBT guards keep it to one roll.
-     */
-    private void deflectProjectiles(EntityPlayer player) {
-        double chance = AngelBlessing.getDeflectChance(player);
-
-        if (chance <= 0.0D) return;
-
-        AxisAlignedBB box = AxisAlignedBB.getBoundingBox(
-            player.posX - DEFLECT_RANGE,
-            player.posY - DEFLECT_RANGE,
-            player.posZ - DEFLECT_RANGE,
-            player.posX + DEFLECT_RANGE,
-            player.posY + DEFLECT_RANGE,
-            player.posZ + DEFLECT_RANGE);
-
-        for (EntityArrow arrow : player.worldObj.getEntitiesWithinAABB(EntityArrow.class, box)) {
-            AngelBlessing.deflectProjectile(player, arrow, chance);
-        }
-
-        for (EntityFireball fireball : player.worldObj.getEntitiesWithinAABB(EntityFireball.class, box)) {
-            AngelBlessing.deflectProjectile(player, fireball, chance);
-        }
-
-        for (EntityThrowable throwable : player.worldObj.getEntitiesWithinAABB(EntityThrowable.class, box)) {
-            AngelBlessing.deflectProjectile(player, throwable, chance);
         }
     }
 

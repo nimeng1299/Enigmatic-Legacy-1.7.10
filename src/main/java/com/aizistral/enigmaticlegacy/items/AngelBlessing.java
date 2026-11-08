@@ -79,6 +79,9 @@ public class AngelBlessing extends ItemSpellstoneCurio {
         builder.popPrefix();
     }
 
+    /** Scan radius shared by all deflection sources on 1.7.10, which has no impact event. */
+    public static final double DEFLECT_SCAN_RANGE = 4.0D;
+
     protected double range = 4.0D;
 
     public AngelBlessing() {
@@ -274,10 +277,10 @@ public class AngelBlessing extends ItemSpellstoneCurio {
 
     /**
      * Total deflection chance for one bearer. 1.20 adds up every source into a single roll in its
-     * {@code ProjectileImpactEvent} handler; the two sources this port scans for are Angel's
-     * Blessing and the Non-Euclidean Cube. Both items call this, so wearing them together rolls
-     * once at the summed chance instead of twice at 50% / 35% - the shared {@code AB_DEFLECT_*}
-     * NBT guards already guarantee a projectile is processed only once.
+     * {@code ProjectileImpactEvent} handler: Angel's Blessing, the Non-Euclidean Cube and a VIOLET
+     * Enigmatic Amulet (the Ascension Amulet counts as every color). Each item calls this on 1.7.10,
+     * so wearing several of them rolls once at the summed chance instead of once per item - the
+     * shared {@code AB_DEFLECT_*} NBT guards already guarantee a projectile is processed only once.
      */
     public static double getDeflectChance(EntityLivingBase bearer) {
         double chance = 0.0D;
@@ -291,7 +294,47 @@ public class AngelBlessing extends ItemSpellstoneCurio {
             chance += 0.35D;
         }
 
+        // 1.20: EnigmaticEventHandler#onProjectileImpact adds 0.15 for AmuletColor.VIOLET.
+        // hasColor() is true for a VIOLET Enigmatic Amulet and for the Ascension Amulet alike.
+        if (bearer instanceof EntityPlayer player
+            && EnigmaticItems.ENIGMATIC_AMULET.hasColor(player, EnigmaticAmulet.AmuletColor.VIOLET)) {
+            chance += 0.15D;
+        }
+
         return chance;
+    }
+
+    /**
+     * Shared "scan for incoming projectiles" entry point. 1.20 deflects from
+     * {@code ProjectileImpactEvent}; 1.7.10 has no such event, so every source scans a small box
+     * around the bearer and bounces projectiles while they are still in flight. The summed chance
+     * together with the NBT guards in {@link #deflectProjectile} makes scans triggered by different
+     * items behave as one roll for a given projectile.
+     */
+    public static void deflectProjectilesAround(EntityLivingBase bearer) {
+        double chance = getDeflectChance(bearer);
+
+        if (chance <= 0.0D) return;
+
+        AxisAlignedBB box = AxisAlignedBB.getBoundingBox(
+            bearer.posX - DEFLECT_SCAN_RANGE,
+            bearer.posY - DEFLECT_SCAN_RANGE,
+            bearer.posZ - DEFLECT_SCAN_RANGE,
+            bearer.posX + DEFLECT_SCAN_RANGE,
+            bearer.posY + DEFLECT_SCAN_RANGE,
+            bearer.posZ + DEFLECT_SCAN_RANGE);
+
+        for (EntityArrow arrow : bearer.worldObj.getEntitiesWithinAABB(EntityArrow.class, box)) {
+            deflectProjectile(bearer, arrow, chance);
+        }
+
+        for (EntityFireball fireball : bearer.worldObj.getEntitiesWithinAABB(EntityFireball.class, box)) {
+            deflectProjectile(bearer, fireball, chance);
+        }
+
+        for (EntityThrowable throwable : bearer.worldObj.getEntitiesWithinAABB(EntityThrowable.class, box)) {
+            deflectProjectile(bearer, throwable, chance);
+        }
     }
 
     /**
