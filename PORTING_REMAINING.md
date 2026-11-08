@@ -341,6 +341,18 @@
     - **核对无差异**：GREEN +25% 挖掘（`BreakSpeed`）、BLACK +10% 生命窃取（`LivingHurtEvent`）、MAGENTA 摔落伤害 ≤2 免伤与 -2 减免（`LivingAttackEvent` / `LivingHurtEvent`）、EPIC + 防火、与神秘护符互斥的 `canEquip`、隐藏配方、死亡时 `POSTMORTAL_POSSESSIONS` 与超次元容器、两组 tooltip。
     - **未动 / 未实测**：`onExperienceDrop` 里「戴护符死亡时取消经验掉落」仍属第 2 条的通用遗留（`POSTMORTAL_POSSESSIONS` 在死亡处理结束时已清空，经验球 20 tick 后才生成），不是飞升护符专属；游戏内实戴对比（跳跃高度、水中速度、偏转概率统计）未实测；已通过 `build` + `runServer` / `runClient` 双端启动验证（Mixin 注入无 `InvalidInjectionException`，`require = 1` 确证 `0.08D` 重力常量注入点命中）。
 
+28. **迷人徽章（Charming Insignia / `insignia`）**：1.20 的效果分布在 `items/Insignia`、`MixinEntityRenderer`、`SuperpositionHandler#renderInsigniaNameplate`、`MixinItemStack` 和 `RenderNameTagEvent` 处理器五处；1.7.10 此前除注册表外 **`INSIGNIA` 零引用**，等于整块效果未实现。本次补齐：
+
+    - **铭牌替换**：1.7.10 的标签文本在 `RendererLivingEntity#passSpecialRender` 里由 `func_145748_c_()` 取一次（潜行 / 非潜行两个分支共用），用 `@Redirect` 换成徽章上的雕刻名。直接返回反序列化后的 `IChatComponent`，颜色与样式和 1.20 传 `Component` 等价。
+    - **真名小字**：在 `func_96449_a` 的 TAIL 追加 `(真名)`，由新增的 `client/renderers/InsigniaNameplateRenderer` 按 1.20 的参数绘制（0.4 倍缩放、下移 10px、无背景板），并沿用原版 64 格距离限制。可见条件同 `canSeeTrueName`（创造模式或戴谜之眼），且只在确实存在雕刻时显示（对应 1.20 的 `override` 分支）。
+    - **自己可见**：1.20 由 `RenderNameTagEvent.Result.ALLOW` 放行；1.7.10 的 `func_110813_b` 无条件排除本地玩家，现注入 HEAD，在「戴徽章 + `tagDisplayEnabled`」时返回 true（保留 `Minecraft.isGuiEnabled()` 前置条件）。
+    - **物品名不被雕刻覆盖**：新增 `MixinItemStack`，让 `ItemStack#getDisplayName` 对徽章返回物品名、`hasDisplayName` 返回 false（对应 1.20 的 `getHoverName` / `hasCustomHoverName`）。否则 1.7.10 会把 `display.Name` 当成物品名，物品栏、铁砧和同步包里的名字都会变成雕刻内容。
+    - **tooltip 保留格式**：原 `getCustomName` 用 `getUnformattedTextForChat()` 丢掉了颜色；改为新增 `getCustomNameComponent` 返回原始组件，`getCustomName` 再用 `getFormattedText()` 重建，`Engraved Name` 一行现在能显示建筑师墨水的颜色与样式。
+    - **核对无差异**：潜行 + 右键切换 `tagDisplayEnabled`（`ItemBase` 已把 `onItemRightClick` 桥接到 `use`）、`canEquipFromUse` 为 false、UNCOMMON 稀有度、配方与书页（`data/enigmaticlegacy/recipes/insignia.json`）。
+    - **平台限制（未实现）**：1.20 的 `getAttributeModifiers` 通过 `CuriosApi.addSlotModifier("charm", 1)` 让徽章「额外占一个 charm 槽、不挤掉其他护符」。1.7.10 的 Baubles 槽位由 `BaubleExpandedSlots` 全局静态分配，没有按玩家 / 按装备增删槽位的 API（见第 10 条），AGENTS.md 也禁止自建槽位系统，故此项无法等价实现。
+    - **附带发现（未做）**：1.20 会把徽章注入沙漠神殿战利品池（`EnigmaticEventHandler` 的 `DESERT_PYRAMID` 分支），1.7.10 没有对应注入。这属于获取途径而非物品效果，需要时可用 `ChestGenHooks.PYRAMID_DESERT_CHEST` 补。
+    - **未实测**：铭牌渲染（假名、真名小字、自己可见、潜行切换）只做了 `build` + `runClient` 启动验证（三个注入点均 `require = 1`，客户端无 `InvalidInjectionException`），未进世界实际观察。
+
 ---
 
 ## 七、已实现但未完整实测

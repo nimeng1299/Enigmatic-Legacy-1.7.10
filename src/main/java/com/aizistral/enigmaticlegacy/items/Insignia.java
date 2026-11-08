@@ -62,25 +62,37 @@ public class Insignia extends ItemBaseCurio {
                 + (ItemNBTHelper.getBoolean(stack, "tagDisplayEnabled", true) ? "Enabled" : "Disabled"));
     }
 
-    public Optional<Component> getCustomName(ItemStack stack) {
-        net.minecraft.nbt.NBTTagCompound display = stack.getTagCompound() != null ? stack.getTagCompound()
-            .getCompoundTag("display") : null;
+    /**
+     * Deserialized engraving, or {@code null} if the insignia carries none. Kept as the raw chat
+     * component so colors and styles survive; 1.20 returns the deserialized component untouched.
+     */
+    @javax.annotation.Nullable
+    public net.minecraft.util.IChatComponent getCustomNameComponent(ItemStack stack) {
+        net.minecraft.nbt.NBTTagCompound tag = stack.getTagCompound();
+        net.minecraft.nbt.NBTTagCompound display = tag != null ? tag.getCompoundTag("display") : null;
 
         if (display != null && display.hasKey("Name", 8)) {
             try {
                 net.minecraft.util.IChatComponent parsed = net.minecraft.util.IChatComponent.Serializer
                     .func_150699_a(display.getString("Name"));
-                Component component = Component.literal(parsed.getUnformattedTextForChat());
-                if (component != null) return Optional.of(component);
-                else {
-                    display.removeTag("Name");
-                }
+
+                if (parsed != null) return parsed;
             } catch (Exception exception) {
-                display.removeTag("Name");
+                // Malformed engraving data is dropped, same as 1.20.
             }
+
+            display.removeTag("Name");
         }
 
-        return Optional.empty();
+        return null;
+    }
+
+    public Optional<Component> getCustomName(ItemStack stack) {
+        net.minecraft.util.IChatComponent custom = this.getCustomNameComponent(stack);
+
+        // 1.20 hands the deserialized component to the tooltip verbatim. Rebuild it from the
+        // formatted text here, otherwise Architect's Inkwell colors and styles would be lost.
+        return custom != null ? Optional.of(Component.literal(custom.getFormattedText())) : Optional.empty();
     }
 
     public boolean canSeeTrueName(EntityPlayer player) {

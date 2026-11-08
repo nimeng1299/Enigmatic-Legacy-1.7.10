@@ -26,6 +26,7 @@
         "MixinEntityVillager",
         "MixinItemInWorldManager",
         "MixinItemInWorldManagerAccessor",
+        "MixinItemStack",
         "MixinPotionEffect",
         "MixinPotionHelper",
         "MixinServerConfigurationManager",
@@ -36,7 +37,8 @@
     ],
     "client": [
         "MixinEtFuturumElytraLayer",
-        "MixinPlayerControllerMP"
+        "MixinPlayerControllerMP",
+        "MixinRendererLivingEntity"
     ],
     "server": []
 }
