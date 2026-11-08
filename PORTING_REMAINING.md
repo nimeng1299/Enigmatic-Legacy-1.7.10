@@ -16,18 +16,25 @@
 
 | 奖励 | 触发条件 | 1.7.10 可行性 |
 | --- | --- | --- |
-| Architect Eye（`ENIGMATIC_EYE`） | 玩家第一次打开任意原版箱子（持久标记 `LootedArchitectEye`） | 可做 |
+| Architect Eye（`ENIGMATIC_EYE`） | 玩家第一次打开任意原版箱子（持久标记 `LootedArchitectEye`） | **已实现**（`MixinWeightedRandomChestContent` 标记结构战利品箱 + `MixinEntityPlayerMP` 开箱时注入；1.7.10 无战利品表，按「结构生成时填充过的箱子」近似） |
 | Ichor Bottle | 每人仅能获得一次（持久标记 `LootedIchorBottle`），重复生成时移除 | 可做 |
 | Astral Fruit | 诅咒玩家第一次打开末地城宝箱（持久标记 `LootedFirstEndCityChest`） | **已实现**（`MixinEntityPlayerMP` 拦截 `displayGUIChest` + `SpecialLootModifier#onChestOpened`；1.7.10 无末地城，按「末地维度内的任意箱子方块」近似） |
 | Heart of the Earth | 考古可疑方块 3%（`CustomLoot.EarthHeartChance`）；同时以权重 7 注入上世界地牢宝箱 | 地牢宝箱途径**已实现**（`ChestGenHooks`）；考古平台不适用（1.7.10 无考古系统） |
 
-现状：`objects/SpecialLootModifier` 只保留了配置项，`registries/EnigmaticLootModifiers` 仅实现了 Earth Heart 一项；**Earth Heart 的地牢宝箱注入已实现**（`EnigmaticLootModifiers.register()`，六类地牢宝箱，权重 7，受 `CustomDungeonLootEnabled` 与 `EarthHeartEnabled` 控制），其余两项（Architect Eye / Ichor Bottle）**没有任何战利品注入逻辑**。
+现状：`objects/SpecialLootModifier` 承载全部一次性开箱奖励；**Earth Heart 的地牢宝箱注入已实现**（`EnigmaticLootModifiers.register()`，六类地牢宝箱，权重 7，受 `CustomDungeonLootEnabled` 与 `EarthHeartEnabled` 控制）；Architect Eye 与 Astral Fruit **已实现**；Ichor Bottle 仍**没有任何战利品注入逻辑**。
+
+补充：**Architect Eye（休眠之眼）已实现**。1.7.10 在结构生成时就滚好箱子内容，没有"开箱时"的战利品表，因此分两步：
+1. `mixin/MixinWeightedRandomChestContent` 在 `WeightedRandomChestContent#generateChestContents` 返回时调用 `SpecialLootModifier#markLootChest`，给该箱子打上 `EnigmaticLootChest` 标记 —— 这是 1.20 里「箱子战利品表 id 以 `minecraft:chests/` 开头」的等价判据，用来把地牢/矿洞/要塞/神殿/村庄等结构箱与玩家自建储物箱区分开。
+2. `mixin/MixinTileEntityChest` 让 `TileEntityChest` 实现 `api/quack/ILootChest`，并在 `readFromNBT` / `writeToNBT` 中读写该标记 —— 1.7.10 的方块实体不会保存自己不写入的 NBT，标记必须在区块存盘后仍然存在，否则玩家稍后再开箱就拿不到奖励。
+3. `SpecialLootModifier#onChestOpened`（由 `mixin/MixinEntityPlayerMP` 在 `displayGUIChest` HEAD 调用）在玩家首次打开带标记的箱子时，向随机空位放入一个休眠之眼，并写入持久标记 `LootedArchitectEye`。
+
+与 1.20 的差异：标记只在眼真正放入后消费（箱子恰好满格不会浪费机会）；末影箱、漏斗/发射器等非 `TileEntityChest` 容器不计；同一箱子被不同玩家先后打开时，每个玩家各自都能拿到一次（1.20 中箱子战利品在首次开启时生成，只有第一个玩家能拿到）。
 
 补充：**Astral Fruit 已实现**。1.7.10 在结构生成时就滚好箱子内容，没有可挂接的"开箱时"战利品表，因此改由 `mixin/MixinEntityPlayerMP` 在服务端 `EntityPlayerMP#displayGUIChest` 的 HEAD 处调用 `objects/SpecialLootModifier#onChestOpened`：仅当目标为 `TileEntityChest`（末影箱不计）、位于末地（dimension 1）、且玩家佩戴七咒之戒时，向箱子空位放入一个天体果实并写入持久标记 `LootedFirstEndCityChest`。与 1.20 的差异：标记只在果实真正放入后消费（未戴戒指开箱不会浪费这次机会）；1.7.10 无末地城，任何末地箱子都算，玩家自建箱子同样会触发。
 
 补充：1.20 主世界地牢 `epic` 池中的**铁指环（权重 20）已补齐**（同一 `EnigmaticLootModifiers.register()`，受 `CustomDungeonLootEnabled` 与 `IronRingEnabled` 双重控制）；同池的磁铁戒指、急迫药水、抄录笔、铁工具与杂项物品仍未注入。
 
-建议实现：监听 Forge 的 `PlayerOpenContainerEvent`，在服务端识别 `ContainerChest` / 末影箱，按玩家持久 NBT 一次性注入物品；末地城宝箱可用维度 + 距离末地岛中心的范围判定近似。
+建议实现（仅剩 Ichor Bottle）：沿用同一 `SpecialLootModifier#onChestOpened` 钩子——箱子生成时若滚出灵液瓶则无法在开箱时移除，因此需要在 `MixinWeightedRandomChestContent` 中直接拦截：把 Ichor Bottle 从结构箱战利品里剔除，改为按玩家持久标记 `LootedIchorBottle` 在首次开箱时注入一次。
 
 ### 2. 经验掉落修正 — 部分实现
 

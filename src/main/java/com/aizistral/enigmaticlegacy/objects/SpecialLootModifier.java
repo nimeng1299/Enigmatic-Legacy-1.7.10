@@ -10,6 +10,7 @@ import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.ResourceLocation;
 
 import com.aizistral.enigmaticlegacy.api.generic.SubscribeConfig;
+import com.aizistral.enigmaticlegacy.api.quack.ILootChest;
 import com.aizistral.enigmaticlegacy.config.OmniconfigHandler;
 import com.aizistral.enigmaticlegacy.handlers.SuperpositionHandler;
 import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
@@ -19,8 +20,10 @@ import com.aizistral.omniconfig.wrappers.OmniconfigWrapper;
 import com.google.common.collect.ImmutableList;
 
 /**
- * Loot modifier stand-in; 1.7.10 has no global loot modifier system, so this
- * only retains the configuration entries used elsewhere.
+ * Port of the 1.20 global loot modifier of the same name. 1.7.10 has no global loot modifier
+ * system and rolls chest contents at world generation time, so the per-player one-time rewards are
+ * applied when the player opens the chest instead (see {@link #onChestOpened}); the archaeology
+ * branch is not applicable and only keeps its configuration entry.
  */
 public class SpecialLootModifier {
 
@@ -29,6 +32,7 @@ public class SpecialLootModifier {
      * one-time reward there. 1.7.10 rolls chest contents during world generation instead, which
      * is long before any player is involved - see {@link #onChestOpened} for the workaround.
      */
+    private static final String ARCHITECT_EYE_TAG = "LootedArchitectEye";
     private static final String ASTRAL_FRUIT_TAG = "LootedFirstEndCityChest";
 
     private static final int END_DIMENSION_ID = 1;
@@ -57,19 +61,60 @@ public class SpecialLootModifier {
     }
 
     /**
-     * Mirrors the Celestial Fruit branch of the 1.20 loot modifier: the first chest a bearer of the
-     * Seven Curses opens in the End contains the fruit. Called from {@code MixinEntityPlayerMP}
+     * Entry point of every per-player one-time chest reward; called from {@code MixinEntityPlayerMP}
      * right before the chest GUI is created, i.e. before the player is able to take anything out.
      * <p>
-     * 1.7.10 generates no end cities, so the check is limited to "any chest block in the End"
-     * rather than the {@code chests/end_city_treasure} loot table, and ender chests (which are not
-     * a {@link TileEntityChest}) never count. Unlike 1.20 the one-time tag is only consumed once
-     * the fruit has actually been placed, so opening a chest without the ring equipped does not
-     * waste the reward.
+     * 1.7.10 generates no end cities and has no loot tables, so the 1.20 conditions based on loot
+     * table ids are approximated: "is this a loot chest" is answered by the flag {@link #markLootChest}
+     * puts on structure chests during world generation, and "end city treasure" degrades to "any chest
+     * block in the End". Ender chests are not a {@link TileEntityChest}, so they never count.
      */
     public static void onChestOpened(EntityPlayerMP player, IInventory inventory) {
         if (!(inventory instanceof TileEntityChest)) return;
-        if (player.worldObj == null || player.worldObj.provider.dimensionId != END_DIMENSION_ID) return;
+        if (player.worldObj == null) return;
+
+        SpecialLootModifier.grantArchitectEye(player, inventory);
+        SpecialLootModifier.grantAstralFruit(player, inventory);
+    }
+
+    /**
+     * Flags a chest that is being filled from a structure loot pool, so the one-time rewards above
+     * can recognise it once a player opens it. Called from {@code MixinWeightedRandomChestContent}
+     * for every inventory vanilla loot generation fills; only chests implement {@link ILootChest},
+     * so dispensers, minecarts and modded containers are left alone.
+     */
+    public static void markLootChest(IInventory inventory) {
+        if (inventory instanceof ILootChest) {
+            ((ILootChest) inventory).setEnigmaticLootChest(true);
+        }
+    }
+
+    /**
+     * Mirrors the Architect Eye branch of the 1.20 loot modifier: the first loot chest a player opens
+     * contains one dormant Eye, once per player. A freshly created stack is dormant by default (see
+     * {@code EnigmaticEye#isDormant}), so the player has to activate it themselves.
+     * <p>
+     * The tag is only consumed once the Eye has actually been placed, so a chest that happens to be
+     * full does not waste the reward - the next loot chest gets it instead.
+     */
+    private static void grantArchitectEye(EntityPlayerMP player, IInventory inventory) {
+        if (!OmniconfigHandler.isItemEnabled(EnigmaticItems.ENIGMATIC_EYE)) return;
+        if (SuperpositionHandler.hasPersistentTag(player, ARCHITECT_EYE_TAG)) return;
+        if (!(inventory instanceof ILootChest) || !((ILootChest) inventory).isEnigmaticLootChest()) return;
+
+        ItemStack eye = new ItemStack(EnigmaticItems.ENIGMATIC_EYE);
+
+        if (!SpecialLootModifier.insertStack(inventory, player.worldObj.rand, eye)) return;
+
+        SuperpositionHandler.setPersistentBoolean(player, ARCHITECT_EYE_TAG, true);
+    }
+
+    /**
+     * Mirrors the Celestial Fruit branch of the 1.20 loot modifier: the first chest a bearer of the
+     * Seven Curses opens in the End contains the fruit.
+     */
+    private static void grantAstralFruit(EntityPlayerMP player, IInventory inventory) {
+        if (player.worldObj.provider.dimensionId != END_DIMENSION_ID) return;
         if (!OmniconfigHandler.isItemEnabled(EnigmaticItems.ASTRAL_FRUIT)) return;
         if (SuperpositionHandler.hasPersistentTag(player, ASTRAL_FRUIT_TAG)) return;
         if (!SuperpositionHandler.isTheCursedOne(player)) return;
