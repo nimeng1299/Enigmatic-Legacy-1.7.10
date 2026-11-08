@@ -5,11 +5,13 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 
@@ -41,10 +43,61 @@ public class EnigmaticEye extends ItemBaseCurio {
         EnigmaticLegacy.MODID,
         "book/relics/enigmatic_eye");
 
+    @SideOnly(Side.CLIENT)
+    private IIcon awakenedIcon;
+    @SideOnly(Side.CLIENT)
+    private IIcon dormantIcon;
+    @SideOnly(Side.CLIENT)
+    private IIcon dormantIcon1;
+    @SideOnly(Side.CLIENT)
+    private IIcon dormantIcon2;
+
     public EnigmaticEye() {
         super(
             getDefaultProperties().rarity(EnumRarity.epic)
                 .fireResistant());
+    }
+
+    /**
+     * 1.20 picks between the dormant and the awakened sprite through the
+     * {@code enigmaticlegacy:enigmatic_eye_activated} item property (see
+     * {@code EnigmaticEye#registerVariants} and {@code models/item/enigmatic_eye.json}, whose default
+     * layer is {@code item/enigmatic_eye_dormant}). 1.7.10 renders the item straight from
+     * {@link IIcon}s, so the same state machine is reproduced here - otherwise the default
+     * {@code enigmatic_eye} icon would show the awakened eye on a freshly obtained, still dormant one.
+     */
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(IIconRegister registry) {
+        super.registerIcons(registry);
+        this.awakenedIcon = this.itemIcon;
+        this.dormantIcon = registry.registerIcon("enigmaticlegacy:item/enigmatic_eye_dormant");
+        this.dormantIcon1 = registry.registerIcon("enigmaticlegacy:item/enigmatic_eye_dormant_1");
+        this.dormantIcon2 = registry.registerIcon("enigmaticlegacy:item/enigmatic_eye_dormant_2");
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconIndex(ItemStack stack) {
+        return this.iconFor(stack);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIcon(ItemStack stack, int pass) {
+        return this.iconFor(stack);
+    }
+
+    @SideOnly(Side.CLIENT)
+    private IIcon iconFor(ItemStack stack) {
+        if (!this.isDormant(stack)) return this.awakenedIcon != null ? this.awakenedIcon : this.itemIcon;
+
+        int animTicks = ItemNBTHelper.getInt(stack, "ActivationAnimation", -1);
+
+        if (animTicks > 2) return this.dormantIcon1;
+        if (animTicks > -1) return this.dormantIcon2;
+
+        return this.dormantIcon;
     }
 
     @SideOnly(Side.CLIENT)
@@ -91,8 +144,9 @@ public class EnigmaticEye extends ItemBaseCurio {
 
     @Override
     public Component getName(ItemStack stack) {
-        if (this.isDormant(stack)) return Component.translatable("item.enigmaticlegacy.enigmatic_eye_dormant");
-        else return Component.translatable("item.enigmaticlegacy.enigmatic_eye_active");
+        // 1.7.10 resolves item names as <unlocalized name>.name, so the suffix is mandatory here.
+        if (this.isDormant(stack)) return Component.translatable("item.enigmaticlegacy.enigmatic_eye_dormant.name");
+        else return Component.translatable("item.enigmaticlegacy.enigmatic_eye_active.name");
     }
 
     public void inventoryTick(ItemStack pStack, World pLevel, Entity pEntity, int pSlotId, boolean pIsSelected) {
