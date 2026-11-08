@@ -4,6 +4,12 @@ This mod is designed to bring new magical-themed content to the game, mainly of 
 
 Whatever fate your advent will bring upon this forgotten land.
 
+## 支持的 GTNH 版本
+
+| mod 最新版本 | GTNH 版本|
+| :---: | :---: |
+| 3.1.0 | 2.9.0 |
+
 ## 1.7.10 的一些改动
 
 # 七咒之戒

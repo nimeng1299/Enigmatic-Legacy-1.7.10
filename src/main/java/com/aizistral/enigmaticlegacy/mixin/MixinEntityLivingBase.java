@@ -9,10 +9,9 @@ import net.minecraft.util.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.aizistral.enigmaticlegacy.compat.ForgeRegistries;
@@ -27,6 +26,9 @@ import com.aizistral.enigmaticlegacy.registries.EnigmaticItems;
  * modern {@code LivingExperienceDropEvent}, so curio bonuses are applied at
  * the point the base amount is computed.
  */
+// The amulet gravity modifier deliberately does NOT use @ModifyConstant on the 0.08D literal:
+// that injector is exclusive per instruction node, and Galacticraft modifies the same literal,
+// so one of the two mods would be silently dropped and its require check would crash the game.
 @Mixin(EntityLivingBase.class)
 public abstract class MixinEntityLivingBase {
 
@@ -109,22 +111,29 @@ public abstract class MixinEntityLivingBase {
     /**
      * MAGENTA Enigmatic Amulet: {@code -25%} gravity (the Ascension Amulet counts as every color).
      * <p>
-     * 1.20 applies this as a {@code ForgeMod.ENTITY_GRAVITY} MULTIPLY_TOTAL modifier; 1.7.10
-     * hardcodes the {@code 0.08D} fall acceleration in the air branch of
-     * {@code EntityLivingBase#moveEntityWithHeading}. Scaling that constant by 0.75 is equivalent.
-     * The {@code 0.02D} values in the water/lava branches are buoyancy, not gravity, and are left
-     * alone; {@code 0.08D} occurs exactly once in this method.
+     * 1.20 applies this as a {@code ForgeMod.ENTITY_GRAVITY} MULTIPLY_TOTAL modifier. The obvious
+     * 1.7.10 port is a {@code @ModifyConstant} on the hardcoded {@code 0.08D} fall acceleration in
+     * {@code moveEntityWithHeading}, but that injector is redirect-family: it claims the constant
+     * instruction node exclusively, so any other mod touching the same literal gets skipped. That is
+     * not academic - Galacticraft does exactly this, its injection check then fails and
+     * {@code EntityLivingBase} cannot load at all (the whole game dies on startup).
+     * <p>
+     * Callbacks do chain with everything, so the same physics is expressed here as a pre-gravity
+     * impulse: {@code 0.08D} is subtracted later in the very same tick, so adding
+     * {@code 0.08D * 0.25D} up front leaves the tick with {@code motionY - 0.06D} and identical
+     * downstream integration. Water and lava branches never apply fall gravity, so they are skipped;
+     * a flying player never reaches the branch either.
      */
-    @ModifyConstant(method = "moveEntityWithHeading", constant = @Constant(doubleValue = 0.08D), require = 1)
-    private double enigmaticlegacy$amuletGravity(double gravity) {
+    @Inject(method = "moveEntityWithHeading", at = @At("HEAD"))
+    private void enigmaticlegacy$amuletGravity(float strafe, float forward, CallbackInfo ci) {
         EntityLivingBase self = (EntityLivingBase) (Object) this;
 
-        if (self instanceof EntityPlayer player
-            && EnigmaticItems.ENIGMATIC_AMULET.hasColor(player, AmuletColor.MAGENTA)) {
-            return gravity * 0.75D;
-        }
+        if (!(self instanceof EntityPlayer player) || player.capabilities.isFlying) return;
+        if (player.isInWater() || player.handleLavaMovement()) return;
 
-        return gravity;
+        if (EnigmaticItems.ENIGMATIC_AMULET.hasColor(player, AmuletColor.MAGENTA)) {
+            player.motionY += 0.08D * 0.25D;
+        }
     }
 
 }

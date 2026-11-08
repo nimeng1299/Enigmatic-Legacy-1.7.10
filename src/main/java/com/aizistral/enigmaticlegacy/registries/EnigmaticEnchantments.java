@@ -1,7 +1,10 @@
 package com.aizistral.enigmaticlegacy.registries;
 
+import java.util.function.Supplier;
+
 import net.minecraft.enchantment.Enchantment;
 
+import com.aizistral.enigmaticlegacy.EnigmaticLegacy;
 import com.aizistral.enigmaticlegacy.api.generic.ConfigurableItem;
 import com.aizistral.enigmaticlegacy.compat.EquipmentSlot;
 import com.aizistral.enigmaticlegacy.compat.registries.ObjectHolder;
@@ -50,6 +53,18 @@ public class EnigmaticEnchantments extends AbstractRegistry<Enchantment> {
 
     public static void init() {
         // Forces static initialization.
+    }
+
+    /**
+     * Enchantment ids are global state in 1.7.10 and other mods die on a duplicate, so the id each
+     * enchantment ended up with is logged. When a pack reports "Duplicate enchantment id!" from
+     * another mod, this line tells immediately whether this mod is the one holding the slot.
+     */
+    @Override
+    protected Enchantment register(String name, Supplier<Enchantment> supplier) {
+        Enchantment enchantment = super.register(name, supplier);
+        EnigmaticLegacy.LOGGER.info("Registered enchantment {} with legacy id {}", name, enchantment.effectId);
+        return enchantment;
     }
 
     private EnigmaticEnchantments() {
