@@ -96,6 +96,53 @@ public class CommonProxy {
 
     public void init(FMLInitializationEvent event) {
         com.aizistral.enigmaticlegacy.handlers.EnigmaticEventHandler.register();
+        this.restoreExpandedSlots();
+    }
+
+    /**
+     * Re-adds the mod's bauble slots after Baubles Expanded rebuilds the layout from its config.
+     * <p>
+     * {@code BaubleExpandedSlots.overrideSlots} clears every slot type mods assigned during preInit and
+     * replaces them with the literal {@code slotTypeOverrides} list from {@code config/Baubles.cfg}; it
+     * only accepts calls while {@link cpw.mods.fml.common.LoaderState#INITIALIZATION} is active, which is
+     * exactly when {@code Baubles.init} runs it, provided {@code manualSlotSelection} is enabled. GTNH
+     * packs ship that option enabled with a slot list that predates this mod, so the spellstone and scroll
+     * slots silently disappear there while a development instance (default {@code manualSlotSelection=false})
+     * keeps the automatic assignment and shows them. That mismatch looks like a client-side rendering
+     * problem but is really an empty slot layout.
+     * <p>
+     * Our {@code init} runs after Baubles' (see the {@code required-after:Baubles} dependency), so the
+     * overridden list can be read back and completed through the same public API. Every other slot keeps
+     * its position; only the missing types are appended.
+     */
+    private void restoreExpandedSlots() {
+        java.util.List<String> types = new java.util.ArrayList<>(
+            java.util.Arrays.asList(BaubleExpandedSlots.getCurrentSlotAssignments()));
+        int before = types.size();
+
+        for (String type : new String[] { ItemSpellstoneCurio.SPELLSTONE_SLOT, ItemScrollCurio.SCROLL_SLOT }) {
+            if (BaubleExpandedSlots.isTypeRegistered(type) && !types.contains(type)) {
+                types.add(type);
+            }
+        }
+
+        if (types.size() == before) return;
+
+        BaubleExpandedSlots.overrideSlots(types.toArray(new String[0]));
+
+        com.aizistral.enigmaticlegacy.EnigmaticLegacy.LOGGER.info(
+            "Restored {} bauble slot(s) that Baubles' manual slot selection dropped, layout is now {} slots: {}",
+            types.size() - before,
+            types.size(),
+            types);
+
+        if (types.size() > BaubleExpandedSlots.slotLimit) {
+            com.aizistral.enigmaticlegacy.EnigmaticLegacy.LOGGER.warn(
+                "Bauble layout has {} slots, above the supported limit of {}. Remove unused entries from "
+                    + "'slotTypeOverrides' in config/Baubles.cfg to avoid GUI oddities.",
+                types.size(),
+                BaubleExpandedSlots.slotLimit);
+        }
     }
 
     public void postInit(FMLPostInitializationEvent event) {
